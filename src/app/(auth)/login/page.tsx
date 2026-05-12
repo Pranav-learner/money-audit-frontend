@@ -34,51 +34,58 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md mx-auto">
       {/* Logo */}
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <Wallet className="w-8 h-8 text-white" />
+      <div className="flex flex-col items-center text-center mb-16">
+        <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-tr from-primary via-primary to-accent flex items-center justify-center mb-8 shadow-2xl relative">
+          <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full -z-10 animate-pulse"></div>
+          <Wallet className="w-12 h-12 text-white" />
         </div>
-        <h1 className="text-3xl font-bold text-foreground">MoneyAudit</h1>
-        <p className="text-muted mt-1">Sign in to your account</p>
+        <h1 className="text-5xl font-extrabold text-foreground tracking-tight mb-4">MoneyAudit</h1>
+        <p className="text-muted text-xl max-w-sm">Smart tracking for your finances</p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="glass-card space-y-5">
+      <form onSubmit={handleSubmit} className="glass-card p-12 space-y-10">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Email</label>
-          <div className="relative">
-            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+          <label className="block text-sm font-semibold text-foreground mb-3 ml-1">Email Address</label>
+          <div className="relative group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center transition-colors group-focus-within:text-primary">
+              <Mail className="w-5 h-5 text-muted" />
+            </div>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="input-field pl-10"
+              className="input-field"
+              style={{ paddingLeft: '3.5rem' }}
               id="login-email"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1.5">Password</label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+          <label className="block text-sm font-semibold text-foreground mb-3 ml-1">Password</label>
+          <div className="relative group">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center transition-colors group-focus-within:text-primary">
+              <Lock className="w-5 h-5 text-muted" />
+            </div>
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
-              className="input-field pl-10 pr-10"
+              className="input-field"
+              style={{ paddingLeft: '3.5rem', paddingRight: '3.5rem' }}
               id="login-password"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors p-1"
             >
-              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
         </div>
@@ -86,15 +93,15 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="btn-primary w-full justify-center py-3 text-base disabled:opacity-60"
+          className="btn-primary w-full justify-center py-4 text-lg font-bold disabled:opacity-60 shadow-lg"
           id="login-submit"
         >
           {isSubmitting ? 'Signing in...' : 'Sign In'}
         </button>
 
-        <p className="text-center text-sm text-muted">
+        <p className="text-center text-base text-muted pt-2">
           Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-primary font-semibold hover:underline">
+          <Link href="/register" className="text-primary font-bold hover:underline">
             Sign Up
           </Link>
         </p>
