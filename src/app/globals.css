@@ -150,6 +150,10 @@ body {
   background: rgba(255, 255, 255, 0.9);
 }
 
+.search-input {
+  padding-left: 2.75rem !important;
+}
+
 .input-field::placeholder {
   color: var(--muted);
 }

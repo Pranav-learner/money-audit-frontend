@@ -1,16 +1,19 @@
 import api from '@/lib/api';
 
 export interface Friend {
-  id: string;
+  friendshipId: string;
+  userId: string;
   name: string;
   phone: string;
   email: string;
 }
 
 export interface FriendRequest {
-  id: string;
-  senderName: string;
-  senderPhone: string;
+  friendshipId: string;
+  userId: string;
+  name: string;
+  phone: string;
+  email: string;
   status: string;
 }
 
@@ -40,3 +43,4 @@ export const searchUsers = async (query: string): Promise<any[]> => {
   const res = await api.get(`/users/search?query=${query}`);
   return res.data;
 };
+

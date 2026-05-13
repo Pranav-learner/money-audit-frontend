@@ -9,20 +9,24 @@ export interface DirectTransaction {
   type: 'EXPENSE' | 'PAYMENT';
 }
 
+export interface CreateDirectExpenseRequest {
+  friendId: string;
+  title: string;
+  totalAmount: number;
+  expenseDate: string;
+  splitType: 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE';
+  paidByUserId: string;
+  myShare?: number;
+  otherShare?: number;
+}
+
 export const getDirectExpenses = async (friendId: string): Promise<DirectTransaction[]> => {
   const res = await api.get(`/direct/${friendId}`);
   return res.data;
 };
 
-export const createDirectExpense = async (friendId: string, amount: number, description: string): Promise<void> => {
-  const payload = {
-    friendId,
-    title: description,
-    totalAmount: amount,
-    expenseDate: new Date().toISOString().split('T')[0],
-    splitType: 'EQUAL'
-  };
-  await api.post(`/direct`, payload);
+export const createDirectExpense = async (data: CreateDirectExpenseRequest): Promise<void> => {
+  await api.post(`/direct`, data);
 };
 
 export const createDirectPayment = async (friendId: string, amount: number, note: string): Promise<void> => {

@@ -22,8 +22,7 @@ const navItems = [
   { href: '/budgets', label: 'Budgets', icon: Target },
   { href: '/savings', label: 'Saving/Income', icon: PiggyBank },
   { href: '/groups', label: 'Groups', icon: Users },
-  { href: '/friends', label: 'Friends', icon: UserPlus },
-  { href: '/direct', label: 'Direct', icon: ArrowLeftRight },
+  { href: '/contacts', label: 'Contacts', icon: Users },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
