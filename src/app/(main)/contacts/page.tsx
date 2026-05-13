@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { 
   Search, UserPlus, UserCheck, UserX, Check, X, 
   ArrowLeftRight, Plus, Banknote, User, Users,
-  PieChart
+  PieChart, Camera, FileText
 } from 'lucide-react';
 import { 
   getFriends, 
@@ -26,6 +26,7 @@ import {
 } from '@/lib/services/direct';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
+import api from '@/lib/api';
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
@@ -61,6 +62,8 @@ export default function ContactsPage() {
   const [splitType, setSplitType] = useState<'EQUAL' | 'UNEQUAL'>('EQUAL');
   const [myShare, setMyShare] = useState('');
   const [otherShare, setOtherShare] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
+  const [viewingReceiptUrl, setViewingReceiptUrl] = useState<string | null>(null);
   
   const [payAmount, setPayAmount] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -163,6 +166,36 @@ export default function ContactsPage() {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && selectedFriend) {
+      setIsScanning(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      try {
+        // Step 1: Upload and Parse
+        const res = await api.post('/receipts/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        const data = res.data;
+        setExpAmount(data.amount?.toString() || '');
+        setExpDesc(data.merchant || 'Receipt Expense');
+        
+        // Save the receipt ID to link it during confirm
+        (window as any).lastReceiptId = data.receiptId;
+        
+        toast.success('Receipt scanned successfully!');
+      } catch (error) {
+        console.error('OCR Failed:', error);
+        toast.error('Failed to scan receipt');
+      } finally {
+        setIsScanning(false);
+      }
+    }
+  };
+
   const handleAddExpense = async () => {
     if (!expAmount || !expDesc || !selectedFriend) { 
       toast.error('Fill all fields'); 
@@ -183,17 +216,36 @@ export default function ContactsPage() {
     }
 
     try {
-      await createDirectExpense({
-        friendId: selectedFriend.userId,
-        title: expDesc,
-        totalAmount: total,
-        expenseDate: new Date().toISOString().split('T')[0],
-        splitType: splitType,
-        paidByUserId: paidBy === 'you' ? user?.id?.toString()! : selectedFriend.userId,
-        ...payloadShare
-      });
+      const receiptId = (window as any).lastReceiptId;
       
-      toast.success('Direct expense recorded!');
+      if (receiptId) {
+        // If we have a receipt, use the confirm-group endpoint
+        await api.post(`/receipts/${receiptId}/confirm-group`, {
+          groupId: null, // null for direct expense
+          otherUserId: selectedFriend.userId, // We need to make sure backend supports this or we use friendId
+          amount: total,
+          title: expDesc,
+          expenseDate: new Date().toISOString().split('T')[0],
+          splitType: splitType,
+          splits: splitType === 'UNEQUAL' ? [
+            { userId: user?.id, amount: Number(myShare) },
+            { userId: selectedFriend.userId, amount: Number(otherShare) }
+          ] : []
+        });
+        (window as any).lastReceiptId = null;
+      } else {
+        // Standard flow
+        await createDirectExpense({
+          friendId: selectedFriend.userId,
+          amount: total,
+          description: expDesc,
+          splitType: splitType,
+          myShare: splitType === 'UNEQUAL' ? Number(myShare) : undefined,
+          otherShare: splitType === 'UNEQUAL' ? Number(otherShare) : undefined
+        });
+      }
+      
+      toast.success(`Expense split with ${selectedFriend.name}!`);
       setExpAmount(''); setExpDesc('');
       setMyShare(''); setOtherShare('');
       setShowExpenseModal(false);
@@ -207,6 +259,7 @@ export default function ContactsPage() {
       setNetBalance(balance);
       setBorrowLend(rate);
     } catch (error) {
+      console.error('Add expense failed:', error);
       toast.error('Failed to record expense');
     }
   };
@@ -431,22 +484,35 @@ export default function ContactsPage() {
 
                           {/* Hover Detail Dropdown */}
                           {!isPayment && (
-                            <div className="max-h-0 group-hover:max-h-48 overflow-hidden transition-all duration-500 ease-in-out px-4 bg-black/10">
-                              <div className="py-4 border-t border-white/10 space-y-4">
+                            <div className="max-h-0 group-hover:max-h-64 overflow-hidden transition-all duration-500 ease-in-out px-6 bg-black/10">
+                              <div className="py-6 border-t border-white/10 space-y-6">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-[10px] text-muted uppercase font-bold tracking-wider">Total Bill</span>
-                                  <span className="text-sm font-bold text-foreground">{formatCurrency(totalBill)}</span>
+                                  <span className="text-xs text-muted uppercase font-bold tracking-wider">Total Bill</span>
+                                  <span className="text-base font-bold text-foreground">{formatCurrency(totalBill)}</span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-8 pt-1">
-                                  <div className="space-y-1">
-                                    <p className="text-[9px] text-muted uppercase font-bold tracking-wider">Your Share</p>
-                                    <p className="text-xs font-bold text-foreground">{formatCurrency(yourShare)}</p>
+                                <div className="grid grid-cols-2 gap-8 pt-2">
+                                  <div className="space-y-1.5">
+                                    <p className="text-[10px] text-muted uppercase font-bold tracking-wider">Your Share</p>
+                                    <p className="text-sm font-bold text-foreground">{formatCurrency(yourShare)}</p>
                                   </div>
-                                  <div className="space-y-1 text-right">
-                                    <p className="text-[9px] text-muted uppercase font-bold tracking-wider">{selectedFriend.name}&apos;s Share</p>
-                                    <p className="text-xs font-bold text-foreground">{formatCurrency(friendShare)}</p>
+                                  <div className="space-y-1.5 text-right">
+                                    <p className="text-[10px] text-muted uppercase font-bold tracking-wider">{selectedFriend.name}&apos;s Share</p>
+                                    <p className="text-sm font-bold text-foreground">{formatCurrency(friendShare)}</p>
                                   </div>
                                 </div>
+                                {exp.receiptUrl && (
+                                  <div className="pt-4 border-t border-white/5">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setViewingReceiptUrl(exp.receiptUrl || null);
+                                      }}
+                                      className="btn-secondary w-full text-[10px] h-8 flex items-center justify-center gap-2 hover:bg-primary/20 hover:text-primary transition-all"
+                                    >
+                                      <FileText className="w-3.5 h-3.5" /> View Original Receipt
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
@@ -544,44 +610,66 @@ export default function ContactsPage() {
       {/* Add Expense Modal */}
       {showExpenseModal && (
         <div className="modal-overlay" onClick={() => setShowExpenseModal(false)}>
-          <div className="modal-content max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-foreground">Split with {selectedFriend?.name}</h3>
+          <div className="modal-content max-w-lg w-full p-8" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-2xl font-bold text-foreground">Split with {selectedFriend?.name}</h3>
               <button onClick={() => setShowExpenseModal(false)} className="text-muted hover:text-foreground">
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-6">
+              {/* Optional OCR Upload */}
+              <div className="p-4 rounded-xl border border-dashed border-white/20 bg-white/5 flex items-center justify-between transition-colors hover:border-primary/50 group">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                    <Camera className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">Scan Receipt (Optional)</p>
+                    <p className="text-xs text-muted">Auto-fill details from an image</p>
+                  </div>
+                </div>
+                <label className="btn-secondary text-xs cursor-pointer py-2 px-4 shrink-0">
+                  {isScanning ? (
+                    <span className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-white/80"></div>
+                      Scanning...
+                    </span>
+                  ) : 'Upload'}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={isScanning} />
+                </label>
+              </div>
+
               {/* Description & Amount */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">Description</label>
-                  <input type="text" value={expDesc} onChange={e => setExpDesc(e.target.value)} placeholder="Dinner, Movie, etc." className="input-field" />
+                  <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Description</label>
+                  <input type="text" value={expDesc} onChange={e => setExpDesc(e.target.value)} placeholder="Dinner, Movie, etc." className="input-field py-3 text-base" />
                 </div>
                 <div className="col-span-2">
-                  <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">Total Amount (₹)</label>
+                  <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Total Amount (₹)</label>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">₹</span>
-                    <input type="number" value={expAmount} onChange={e => setExpAmount(e.target.value)} placeholder="0" className="input-field pl-10" />
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-lg">₹</span>
+                    <input type="number" value={expAmount} onChange={e => setExpAmount(e.target.value)} placeholder="0" className="input-field py-3 pl-10 text-base font-medium" />
                   </div>
                 </div>
               </div>
 
               {/* Who Paid */}
               <div>
-                <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Who Paid?</label>
+                <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Who Paid?</label>
                 <div className="flex p-1 bg-white/5 rounded-xl border border-white/10">
                   <button 
                     onClick={() => setPaidBy('you')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all
+                    className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all
                       ${paidBy === 'you' ? 'bg-primary text-white shadow-lg' : 'text-muted hover:text-foreground'}`}
                   >
                     You
                   </button>
                   <button 
                     onClick={() => setPaidBy('friend')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all
+                    className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all
                       ${paidBy === 'friend' ? 'bg-primary text-white shadow-lg' : 'text-muted hover:text-foreground'}`}
                   >
                     {selectedFriend?.name || 'Friend'}
@@ -591,18 +679,18 @@ export default function ContactsPage() {
 
               {/* Split Mode */}
               <div>
-                <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Split Mode</label>
+                <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Split Mode</label>
                 <div className="flex p-1 bg-white/5 rounded-xl border border-white/10">
                   <button 
                     onClick={() => setSplitType('EQUAL')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all
+                    className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all
                       ${splitType === 'EQUAL' ? 'bg-accent text-white shadow-lg' : 'text-muted hover:text-foreground'}`}
                   >
                     Split Equally
                   </button>
                   <button 
                     onClick={() => setSplitType('UNEQUAL')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all
+                    className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all
                       ${splitType === 'UNEQUAL' ? 'bg-accent text-white shadow-lg' : 'text-muted hover:text-foreground'}`}
                   >
                     Manual Split
@@ -612,24 +700,24 @@ export default function ContactsPage() {
 
               {/* Manual Shares */}
               {splitType === 'UNEQUAL' && (
-                <div className="space-y-3 p-4 bg-white/5 rounded-2xl border border-white/10 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="space-y-4 p-5 bg-white/5 rounded-2xl border border-white/10 animate-in fade-in slide-in-from-top-2 duration-300">
                   <div className="flex items-center justify-between gap-4">
-                    <p className="text-xs font-medium text-muted">Your share</p>
-                    <div className="relative w-32">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[10px]">₹</span>
-                      <input type="number" value={myShare} onChange={e => setMyShare(e.target.value)} placeholder="0" className="input-field py-1.5 pl-8 text-sm" />
+                    <p className="text-sm font-medium text-muted">Your share</p>
+                    <div className="relative w-36">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs">₹</span>
+                      <input type="number" value={myShare} onChange={e => setMyShare(e.target.value)} placeholder="0" className="input-field py-2.5 pl-8 text-base font-medium" />
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-4">
-                    <p className="text-xs font-medium text-muted">{selectedFriend?.name}&apos;s share</p>
-                    <div className="relative w-32">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-[10px]">₹</span>
-                      <input type="number" value={otherShare} onChange={e => setOtherShare(e.target.value)} placeholder="0" className="input-field py-1.5 pl-8 text-sm" />
+                    <p className="text-sm font-medium text-muted">{selectedFriend?.name}&apos;s share</p>
+                    <div className="relative w-36">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs">₹</span>
+                      <input type="number" value={otherShare} onChange={e => setOtherShare(e.target.value)} placeholder="0" className="input-field py-2.5 pl-8 text-base font-medium" />
                     </div>
                   </div>
                   {Number(expAmount) > 0 && (
-                    <div className="pt-2 border-t border-white/10 mt-2">
-                      <p className={`text-[10px] font-bold text-right ${Math.abs((Number(myShare) + Number(otherShare)) - Number(expAmount)) < 0.01 ? 'text-success' : 'text-danger'}`}>
+                    <div className="pt-3 border-t border-white/10 mt-3">
+                      <p className={`text-xs font-bold text-right ${Math.abs((Number(myShare) + Number(otherShare)) - Number(expAmount)) < 0.01 ? 'text-success' : 'text-danger'}`}>
                         Total: {formatCurrency(Number(myShare) + Number(otherShare))} / {formatCurrency(Number(expAmount))}
                       </p>
                     </div>
@@ -638,8 +726,8 @@ export default function ContactsPage() {
               )}
 
               {/* Summary Note */}
-              <div className="p-3 bg-primary/5 rounded-xl border border-primary/10">
-                <p className="text-[10px] text-primary/80 italic leading-relaxed">
+              <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                <p className="text-xs text-primary/80 italic leading-relaxed">
                   {paidBy === 'you' 
                     ? `You paid ₹${expAmount || 0}. ${selectedFriend?.name} will owe you ₹${splitType === 'EQUAL' ? (Number(expAmount)/2).toFixed(0) : (otherShare || 0)}.`
                     : `${selectedFriend?.name} paid ₹${expAmount || 0}. You will owe them ₹${splitType === 'EQUAL' ? (Number(expAmount)/2).toFixed(0) : (myShare || 0)}.`
@@ -669,6 +757,36 @@ export default function ContactsPage() {
             <div className="flex gap-3 mt-6">
               <button onClick={() => setShowPaymentModal(false)} className="btn-secondary flex-1 justify-center">Cancel</button>
               <button onClick={handlePayment} className="btn-primary flex-1 justify-center">Settle</button>
+            </div>
+          </div>
+        </div>
+      )}
+        </div>
+      )}
+
+      {/* Receipt Viewer Modal */}
+      {viewingReceiptUrl && (
+        <div className="modal-overlay z-[100]" onClick={() => setViewingReceiptUrl(null)}>
+          <div className="max-w-4xl w-full p-4 flex flex-col items-center" onClick={e => e.stopPropagation()}>
+            <div className="w-full flex justify-end mb-4">
+              <button onClick={() => setViewingReceiptUrl(null)} className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="bg-white rounded-2xl overflow-hidden shadow-2xl relative group">
+              <img 
+                src={viewingReceiptUrl} 
+                alt="Receipt" 
+                className="max-h-[85vh] object-contain"
+              />
+              <a 
+                href={viewingReceiptUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="absolute bottom-4 right-4 bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                Open Original
+              </a>
             </div>
           </div>
         </div>

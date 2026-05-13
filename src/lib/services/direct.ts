@@ -13,6 +13,7 @@ export interface DirectTransaction {
   type: 'EXPENSE' | 'PAYMENT';
   friendName?: string;
   friendId?: string;
+  receiptUrl?: string;
 }
 
 export interface CreateDirectExpenseRequest {
