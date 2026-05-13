@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeftRight, Plus, Search, Banknote } from 'lucide-react';
 import { getFriends, Friend } from '@/lib/services/friends';
-import { getDirectExpenses, createDirectExpense, getNetBalance, DirectExpense } from '@/lib/services/direct';
+import { getDirectExpenses, createDirectExpense, createDirectPayment, getNetBalance, DirectTransaction } from '@/lib/services/direct';
+import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 
 function formatCurrency(n: number) {
@@ -11,9 +12,10 @@ function formatCurrency(n: number) {
 }
 
 export default function DirectPage() {
+  const { user } = useAuth();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
-  const [expenses, setExpenses] = useState<DirectExpense[]>([]);
+  const [expenses, setExpenses] = useState<DirectTransaction[]>([]);
   const [netBalance, setNetBalance] = useState(0);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -81,9 +83,7 @@ export default function DirectPage() {
   const handlePayment = async () => {
     if (!payAmount || !selectedFriend) { toast.error('Enter amount'); return; }
     try {
-      // In this app, payment might be just a negative expense or a specific payment endpoint
-      // Assuming createDirectExpense with negative amount or description "Payment"
-      await createDirectExpense(selectedFriend.id, -Number(payAmount), 'Payment');
+      await createDirectPayment(selectedFriend.id, Number(payAmount), 'Payment Settlement');
       toast.success(`Payment of ${formatCurrency(Number(payAmount))} recorded!`);
       setPayAmount('');
       setShowPaymentModal(false);
@@ -174,18 +174,22 @@ export default function DirectPage() {
 
               {/* History */}
               <div className="space-y-2">
-                {expenses.map(exp => (
-                  <div key={exp.id} className="glass-card flex items-center gap-4 py-3 px-4">
-                    <div className={`w-2 h-2 rounded-full ${exp.paidBy === 'Pranav' ? 'bg-success' : 'bg-danger'}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{exp.description}</p>
-                      <p className="text-xs text-muted">Paid by {exp.paidBy} • {exp.date}</p>
+                {expenses.map(exp => {
+                  const isYou = exp.paidByUserId === user?.id?.toString();
+                  const payerName = isYou ? 'You' : selectedFriend.name;
+                  return (
+                    <div key={exp.id} className="glass-card flex items-center gap-4 py-3 px-4">
+                      <div className={`w-2 h-2 rounded-full ${isYou ? 'bg-success' : 'bg-danger'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground">{exp.description}</p>
+                        <p className="text-xs text-muted">Paid by {payerName} • {new Date(exp.date).toLocaleDateString()}</p>
+                      </div>
+                      <span className={`text-sm font-bold ${isYou ? 'text-success' : 'text-danger'}`}>
+                        {isYou ? '+' : '-'}{formatCurrency(exp.amount)}
+                      </span>
                     </div>
-                    <span className={`text-sm font-bold ${exp.paidBy === 'Pranav' ? 'text-success' : 'text-danger'}`}>
-                      {exp.paidBy === 'Pranav' ? '+' : '-'}{formatCurrency(exp.amount)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           ) : (

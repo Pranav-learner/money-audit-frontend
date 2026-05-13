@@ -8,6 +8,15 @@ export interface Group {
   createdAt: string;
 }
 
+export interface GroupExpense {
+  id: string;
+  title: string;
+  amount: number;
+  paidBy: string;
+  date: string;
+  splitType: string;
+}
+
 export const getGroups = async (): Promise<Group[]> => {
   const res = await api.get('/groups');
   return res.data;
@@ -23,13 +32,13 @@ export const getGroupById = async (id: string): Promise<Group> => {
   return res.data;
 };
 
-export const getGroupExpenses = async (id: string): Promise<any[]> => {
-  const res = await api.get(`/expenses/group/${id}`);
+export const getGroupExpenses = async (id: string): Promise<GroupExpense[]> => {
+  const res = await api.get(`/groups/${id}/expenses`);
   return res.data;
 };
 
 export const getGroupBalances = async (id: string): Promise<any[]> => {
-  const res = await api.get(`/groups/${id}/balances`); // Check if this exists
+  const res = await api.get(`/groups/${id}/balances`);
   return res.data;
 };
 
@@ -38,8 +47,15 @@ export const addGroupMember = async (groupId: string, userId: string): Promise<v
 };
 
 export const createGroupExpense = async (groupId: string, data: any): Promise<void> => {
-  await api.post(`/expenses/group/${groupId}`, data);
+  const payload = {
+    title: data.title,
+    totalAmount: data.amount,
+    expenseDate: new Date().toISOString().split('T')[0],
+    splitType: 'EQUAL'
+  };
+  await api.post(`/groups/${groupId}/expenses`, payload);
 };
+
 export const deleteGroup = async (id: string): Promise<void> => {
   await api.delete(`/groups/${id}`);
 };

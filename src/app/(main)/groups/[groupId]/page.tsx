@@ -162,7 +162,7 @@ export default function GroupDetailPage() {
                     <Receipt className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{exp.description}</p>
+                    <p className="text-sm font-semibold text-foreground">{exp.title}</p>
                     <p className="text-xs text-muted">Paid by {exp.paidBy} • {exp.date}</p>
                   </div>
                   <span className="text-base font-bold text-foreground">{formatCurrency(exp.amount)}</span>
