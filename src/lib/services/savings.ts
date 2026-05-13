@@ -3,8 +3,8 @@ import api from '@/lib/api';
 export interface Saving {
   id: string;
   amount: number;
-  date: string;
-  description: string;
+  savingDate: string;
+  title: string;
 }
 
 export const getSavings = async (): Promise<Saving[]> => {

@@ -84,13 +84,13 @@ export default function BudgetsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {budgets.map(b => {
-              const pct = Math.round((b.spent / b.limit) * 100);
-              const isOver = pct >= 90;
-              const isWarning = pct >= 70 && pct < 90;
+              const pct = b.percentageUsed;
+              const isOver = b.status === 'OVER_BUDGET';
+              const isWarning = b.status === 'NEAR_LIMIT';
               return (
-                <div key={b.id} className="glass-card">
+                <div key={b.category} className="glass-card">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-semibold text-foreground">{b.categoryName}</p>
+                    <p className="text-sm font-semibold text-foreground">{b.category}</p>
                     <span className={`badge text-[10px] ${isOver ? 'badge-danger' : isWarning ? 'badge-warning' : 'badge-success'}`}>
                       {pct}%
                     </span>
@@ -108,7 +108,7 @@ export default function BudgetsPage() {
                     </div>
                     <div className="flex flex-col text-right">
                       <span className="text-xs text-muted">Limit</span>
-                      <span className="text-sm font-semibold text-muted">{formatCurrency(b.limit)}</span>
+                      <span className="text-sm font-semibold text-muted">{formatCurrency(b.budget)}</span>
                     </div>
                   </div>
                 </div>

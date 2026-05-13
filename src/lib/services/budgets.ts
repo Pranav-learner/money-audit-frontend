@@ -1,13 +1,12 @@
 import api from '@/lib/api';
 
 export interface Budget {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  limit: number;
+  category: string;
+  budget: number;
   spent: number;
-  month: number;
-  year: number;
+  remaining: number;
+  percentageUsed: number;
+  status: string;
 }
 
 export const getBudgets = async (month?: number, year?: number): Promise<Budget[]> => {
@@ -19,5 +18,11 @@ export const getBudgets = async (month?: number, year?: number): Promise<Budget[
 };
 
 export const setBudget = async (categoryId: string, limit: number): Promise<void> => {
-  await api.post('/budgets', { categoryId, limitAmount: limit });
+  const now = new Date();
+  await api.post('/budgets', { 
+    categoryId, 
+    limitAmount: limit,
+    month: now.getMonth() + 1,
+    year: now.getFullYear()
+  });
 };

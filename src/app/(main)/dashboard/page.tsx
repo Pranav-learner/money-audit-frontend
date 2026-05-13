@@ -56,7 +56,7 @@ export default function DashboardPage() {
     );
   }
 
-  const dashboard = summary || { totalBalance: 0, monthlyExpenses: 0, totalSavings: 0, budgetUsedPct: 0, trends: {} };
+  const dashboard = summary || { totalBalance: 0, monthlyExpenses: 0, totalSavings: 0, balanceTrend: '', expenseTrend: '', savingsTrend: '', budgetUsedPct: 0 };
   const chartData = charts || { spendingOverview: [], categoryDistribution: [], expenseTrend: [] };
 
   return (
@@ -67,24 +67,24 @@ export default function DashboardPage() {
           title="Total Balance"
           value={formatCurrency(dashboard.totalBalance)}
           icon={<Wallet className="w-5 h-5" />}
-          trend="+12.5%"
-          trendUp
+          trend={dashboard.balanceTrend || '0%'}
+          trendUp={!(dashboard.balanceTrend || '').startsWith('-')}
           color="from-primary to-emerald-400"
         />
         <SummaryCard
           title="Monthly Expenses"
           value={formatCurrency(dashboard.monthlyExpenses)}
           icon={<TrendingDown className="w-5 h-5" />}
-          trend="-3.2%"
-          trendUp={false}
+          trend={dashboard.expenseTrend || '0%'}
+          trendUp={(dashboard.expenseTrend || '').startsWith('-')}
           color="from-rose-400 to-orange-400"
         />
         <SummaryCard
-          title="Total Savings"
+          title="Total Savings/Income"
           value={formatCurrency(dashboard.totalSavings)}
           icon={<PiggyBank className="w-5 h-5" />}
-          trend="+8.1%"
-          trendUp
+          trend={dashboard.savingsTrend || '0%'}
+          trendUp={!(dashboard.savingsTrend || '').startsWith('-')}
           color="from-accent to-violet-400"
         />
         <SummaryCard

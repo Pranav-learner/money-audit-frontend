@@ -17,7 +17,7 @@ export default function SavingsPage() {
 
   const [formAmount, setFormAmount] = useState('');
   const [formDate, setFormDate] = useState('');
-  const [formDescription, setFormDescription] = useState('');
+  const [formTitle, setFormTitle] = useState('');
 
   const fetchSavings = async () => {
     try {
@@ -38,13 +38,13 @@ export default function SavingsPage() {
 
   const openAdd = () => {
     setEditing(null);
-    setFormAmount(''); setFormDate(new Date().toISOString().split('T')[0]); setFormDescription('');
+    setFormAmount(''); setFormDate(new Date().toISOString().split('T')[0]); setFormTitle('');
     setShowModal(true);
   };
 
   const openEdit = (s: Saving) => {
     setEditing(s);
-    setFormAmount(s.amount.toString()); setFormDate(s.date); setFormDescription(s.description);
+    setFormAmount(s.amount.toString()); setFormDate(s.savingDate); setFormTitle(s.title);
     setShowModal(true);
   };
 
@@ -53,8 +53,8 @@ export default function SavingsPage() {
     
     const payload = {
       amount: Number(formAmount),
-      date: formDate,
-      description: formDescription
+      savingDate: formDate,
+      title: formTitle || 'Saving'
     };
 
     try {
@@ -96,10 +96,10 @@ export default function SavingsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Savings</h2>
-          <p className="text-sm text-muted">Track your saving goals</p>
+          <h2 className="text-2xl font-bold text-foreground">Saving/Income</h2>
+          <p className="text-sm text-muted">Track your income and saving goals</p>
         </div>
-        <button onClick={openAdd} className="btn-primary"><Plus className="w-4 h-4" /> Add Saving</button>
+        <button onClick={openAdd} className="btn-primary"><Plus className="w-4 h-4" /> Add Saving/Income</button>
       </div>
 
       {/* Summary */}
@@ -109,7 +109,7 @@ export default function SavingsPage() {
             <PiggyBank className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs text-muted uppercase tracking-wide font-medium">Total Savings</p>
+            <p className="text-xs text-muted uppercase tracking-wide font-medium">Total Balance Impact</p>
             <p className="text-2xl font-bold text-foreground">{formatCurrency(totalSavings)}</p>
           </div>
         </div>
@@ -119,7 +119,7 @@ export default function SavingsPage() {
           </div>
           <div>
             <p className="text-xs text-muted uppercase tracking-wide font-medium">This Month</p>
-            <p className="text-2xl font-bold text-foreground">{formatCurrency(savings.filter(s => s.date.startsWith(new Date().toISOString().slice(0, 7))).reduce((a, b) => a + b.amount, 0))}</p>
+            <p className="text-2xl font-bold text-foreground">{formatCurrency(savings.filter(s => s.savingDate.startsWith(new Date().toISOString().slice(0, 7))).reduce((a, b) => a + b.amount, 0))}</p>
           </div>
         </div>
       </div>
@@ -127,9 +127,9 @@ export default function SavingsPage() {
       {/* List */}
       {savings.length === 0 ? (
         <div className="glass-card text-center py-16">
-          <div className="text-5xl mb-4">🐷</div>
-          <h3 className="text-lg font-semibold text-foreground">No savings yet</h3>
-          <p className="text-sm text-muted mt-1">Start saving towards your goals!</p>
+          <div className="text-5xl mb-4">💰</div>
+          <h3 className="text-lg font-semibold text-foreground">No entries yet</h3>
+          <p className="text-sm text-muted mt-1">Start tracking your income and savings!</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -137,8 +137,8 @@ export default function SavingsPage() {
             <div key={s.id} className="glass-card flex items-center gap-4 py-3 px-4">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent/15 to-primary/15 flex items-center justify-center text-lg">💰</div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{s.description || 'Saving'}</p>
-                <p className="text-xs text-muted">{s.date}</p>
+                <p className="text-sm font-semibold text-foreground truncate">{s.title || 'Saving'}</p>
+                <p className="text-xs text-muted">{s.savingDate}</p>
               </div>
               <span className="text-base font-bold text-success whitespace-nowrap">+{formatCurrency(s.amount)}</span>
               <div className="flex items-center gap-1 shrink-0">
@@ -154,7 +154,7 @@ export default function SavingsPage() {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-foreground mb-5">{editing ? 'Edit Saving' : 'Add Saving'}</h3>
+            <h3 className="text-xl font-bold text-foreground mb-5">{editing ? 'Edit Entry' : 'Add Saving/Income'}</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1.5">Amount (₹)</label>
@@ -165,8 +165,8 @@ export default function SavingsPage() {
                 <input type="date" value={formDate} onChange={e => setFormDate(e.target.value)} className="input-field" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1.5">Description</label>
-                <input type="text" value={formDescription} onChange={e => setFormDescription(e.target.value)} placeholder="E.g. Emergency fund" className="input-field" />
+                <label className="block text-sm font-medium text-foreground mb-1.5">Title</label>
+                <input type="text" value={formTitle} onChange={e => setFormTitle(e.target.value)} placeholder="E.g. Monthly Salary" className="input-field" />
               </div>
             </div>
             <div className="flex gap-3 mt-6">
