@@ -59,7 +59,7 @@ export default function ContactsPage() {
   
   // Modal form states
   const [expAmount, setExpAmount] = useState('');
-  const [expDesc, setExpDesc] = useState('');
+  const [expTitle, setExpTitle] = useState('');
   const [paidBy, setPaidBy] = useState<'you' | 'friend'>('you');
   const [splitType, setSplitType] = useState<'EQUAL' | 'UNEQUAL'>('EQUAL');
   const [myShare, setMyShare] = useState('');
@@ -195,7 +195,7 @@ export default function ContactsPage() {
         
         const data = res.data;
         setExpAmount(data.amount?.toString() || '');
-        setExpDesc(data.merchant || 'Receipt Expense');
+        setExpTitle(data.merchant || 'Receipt Expense');
         if (data.suggestedCategoryId) setSelectedCategoryId(data.suggestedCategoryId);
         
         // Save the receipt ID to link it during confirm
@@ -212,7 +212,7 @@ export default function ContactsPage() {
   };
 
   const handleAddExpense = async () => {
-    if (!expAmount || !expDesc || !selectedFriend) { 
+    if (!expAmount || !expTitle || !selectedFriend) { 
       toast.error('Fill all fields'); 
       return; 
     }
@@ -239,7 +239,7 @@ export default function ContactsPage() {
           groupId: null, // null for direct expense
           otherUserId: selectedFriend.userId, 
           amount: total,
-          title: expDesc,
+          title: expTitle,
           categoryId: selectedCategoryId,
           expenseDate: new Date().toISOString().split('T')[0],
           splitType: splitType,
@@ -254,7 +254,7 @@ export default function ContactsPage() {
         await createDirectExpense({
           friendId: selectedFriend.userId,
           totalAmount: total,
-          title: expDesc,
+          title: expTitle,
           categoryId: selectedCategoryId,
           expenseDate: new Date().toISOString().split('T')[0],
           paidByUserId: paidBy === 'you' ? user?.id : selectedFriend.userId,
@@ -265,7 +265,7 @@ export default function ContactsPage() {
       }
       
       toast.success(`Expense split with ${selectedFriend.name}!`);
-      setExpAmount(''); setExpDesc('');
+      setExpAmount(''); setExpTitle('');
       setMyShare(''); setOtherShare('');
       setShowExpenseModal(false);
       
@@ -489,7 +489,7 @@ export default function ContactsPage() {
                           <div className="flex items-center gap-4 p-3">
                             <div className={`w-1 h-10 rounded-full shrink-0 ${isPayment ? 'bg-primary' : (isPayment || netImpact === 0) ? 'bg-muted' : isYou ? 'bg-success' : 'bg-danger'}`} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-foreground truncate">{exp.description}</p>
+                              <p className="text-sm font-bold text-foreground truncate">{exp.title}</p>
                               <p className="text-[10px] text-muted">
                                 {isPayment ? `Settlement by ${payerName}` : `Paid by ${payerName}`} • {new Date(exp.date).toLocaleDateString()}
                               </p>
@@ -660,11 +660,11 @@ export default function ContactsPage() {
                 </label>
               </div>
 
-              {/* Description & Amount */}
+              {/* Title & Amount */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Description</label>
-                  <input type="text" value={expDesc} onChange={e => setExpDesc(e.target.value)} placeholder="Dinner, Movie, etc." className="input-field py-3 text-base" />
+                  <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Title</label>
+                  <input type="text" value={expTitle} onChange={e => setExpTitle(e.target.value)} placeholder="Dinner, Movie, etc." className="input-field py-3 text-base" />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Total Amount (₹)</label>

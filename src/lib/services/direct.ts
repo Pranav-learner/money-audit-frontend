@@ -2,7 +2,7 @@ import api from '@/lib/api';
 
 export interface DirectTransaction {
   id: string;
-  description: string;
+  title: string;
   amount: number;
   totalAmount?: number;
   splitType?: 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE';
