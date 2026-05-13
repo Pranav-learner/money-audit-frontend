@@ -389,20 +389,58 @@ export default function ContactsPage() {
                     expenses.map(exp => {
                       const isYou = exp.paidByUserId === user?.id?.toString();
                       const payerName = isYou ? 'You' : selectedFriend.name;
+                      const isPayment = exp.type === 'PAYMENT';
+
+                      // Backend now returns totalAmount as 'amount' + individual shares
+                      const totalBill = exp.amount;
+
+                      // Use exact shares from backend (always present after backend fix)
+                      const yourShare  = exp.myShare    ?? totalBill / 2;
+                      const friendShare = exp.otherShare ?? totalBill / 2;
+
+                      // Net impact on balance:
+                      // If YOU paid → friend owes you their share (green)
+                      // If THEY paid → you owe them your share (red)
+                      const netImpact = isYou ? friendShare : yourShare;
+
                       return (
-                        <div key={exp.id} className="flex items-center gap-4 p-3 rounded-xl bg-white/20 hover:bg-white/30 transition-all group">
-                          <div className={`w-1 h-10 rounded-full ${isYou ? 'bg-success/60' : 'bg-danger/60'}`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-foreground">{exp.description}</p>
-                            <p className="text-[10px] text-muted">
-                              Paid by {payerName} • {new Date(exp.date).toLocaleDateString()}
-                            </p>
+                        <div key={exp.id} className="flex flex-col rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 group overflow-hidden border border-white/5 hover:border-white/20">
+                          <div className="flex items-center gap-4 p-3">
+                            <div className={`w-1 h-10 rounded-full shrink-0 ${isPayment ? 'bg-primary' : (isPayment || netImpact === 0) ? 'bg-muted' : isYou ? 'bg-success' : 'bg-danger'}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-foreground truncate">{exp.description}</p>
+                              <p className="text-[10px] text-muted">
+                                {isPayment ? `Settlement by ${payerName}` : `Paid by ${payerName}`} • {new Date(exp.date).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-sm font-black ${isPayment ? 'text-primary' : netImpact === 0 ? 'text-muted' : isYou ? 'text-success' : 'text-danger'}`}>
+                                {isPayment ? '' : netImpact === 0 ? '' : (isYou ? '+' : '-')}{formatCurrency(isPayment ? exp.amount : netImpact)}
+                              </p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className={`text-sm font-black ${isYou ? 'text-success' : 'text-danger'}`}>
-                              {isYou ? '+' : '-'}{formatCurrency(exp.amount)}
-                            </p>
-                          </div>
+
+                          {/* Hover Detail Dropdown */}
+                          {!isPayment && (
+                            <div className="max-h-0 group-hover:max-h-48 overflow-hidden transition-all duration-500 ease-in-out px-4 bg-black/10">
+                              <div className="py-4 border-t border-white/10 space-y-4">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[10px] text-muted uppercase font-bold tracking-wider">Total Bill</span>
+                                  <span className="text-sm font-bold text-foreground">{formatCurrency(totalBill)}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-8 pt-1">
+                                  <div className="space-y-1">
+                                    <p className="text-[9px] text-muted uppercase font-bold tracking-wider">Your Share</p>
+                                    <p className="text-xs font-bold text-foreground">{formatCurrency(yourShare)}</p>
+                                  </div>
+                                  <div className="space-y-1 text-right">
+                                    <p className="text-[9px] text-muted uppercase font-bold tracking-wider">{selectedFriend.name}&apos;s Share</p>
+                                    <p className="text-xs font-bold text-foreground">{formatCurrency(friendShare)}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })

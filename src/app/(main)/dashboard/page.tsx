@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, Wallet, PiggyBank, Target, ArrowUpRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, PiggyBank, Target, Users, ArrowLeftRight, CreditCard } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -14,6 +14,8 @@ import {
   DashboardCharts,
   RecentActivity
 } from '@/lib/services/dashboard';
+import { getAllDirectExpenses, DirectTransaction } from '@/lib/services/direct';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'react-hot-toast';
 
 function formatCurrency(n: number) {
@@ -21,25 +23,29 @@ function formatCurrency(n: number) {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [charts, setCharts] = useState<DashboardCharts | null>(null);
   const [activities, setActivities] = useState<RecentActivity[]>([]);
+  const [directTransactions, setDirectTransactions] = useState<DirectTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [txTab, setTxTab] = useState<'personal' | 'splits'>('personal');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [summaryData, chartsData, activityData] = await Promise.all([
+        const [summaryData, chartsData, activityData, directData] = await Promise.all([
           getDashboardSummary(),
           getDashboardCharts(),
-          getRecentActivity()
+          getRecentActivity(),
+          getAllDirectExpenses().catch(() => [] as DirectTransaction[]),
         ]);
         setSummary(summaryData);
         setCharts(chartsData);
         setActivities(activityData);
+        setDirectTransactions(directData);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
-        // toast.error('Failed to load real data. Backend might be down.');
       } finally {
         setIsLoading(false);
       }
@@ -79,7 +85,7 @@ export default function DashboardPage() {
           subtitle="Expense Rate"
           icon={<Wallet className="w-5 h-5" />}
           trend={dashboard.balanceTrend || '0%'}
-          trendUp={parseFloat(dashboard.balanceTrend || '0') < 50} // Below 50% is green
+          trendUp={parseFloat(dashboard.balanceTrend || '0') < 50}
           color="from-primary to-emerald-400"
         />
         <SummaryCard
@@ -201,27 +207,130 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        {/* Recent Transactions */}
-        <div className="glass-card">
-          <div className="flex items-center justify-between mb-4">
+        {/* Transactions Panel — Tabbed */}
+        <div className="glass-card flex flex-col">
+          {/* Tab Header */}
+          <div className="flex items-center justify-between mb-4 shrink-0">
             <h3 className="text-lg font-semibold text-foreground">Transactions</h3>
-            <button className="text-xs text-primary font-semibold hover:underline">See All</button>
           </div>
-          <div className="space-y-3">
-            {activities.map((activity) => (
-              <div key={activity.id} className="flex items-center gap-3 py-2 border-b border-white/20 last:border-0">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm">
-                  {activity.type === 'expense' ? '💸' : '💰'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{activity.title}</p>
-                  <p className="text-xs text-muted">{activity.date}</p>
-                </div>
-                <span className={`text-sm font-semibold ${activity.type === 'expense' ? 'text-danger' : 'text-success'}`}>
-                  {activity.type === 'expense' ? '-' : '+'}{formatCurrency(activity.amount)}
+
+          {/* Tab Switcher */}
+          <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 mb-4 shrink-0">
+            <button
+              id="tab-personal-transactions"
+              onClick={() => setTxTab('personal')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all
+                ${txTab === 'personal' ? 'bg-primary text-white shadow-lg' : 'text-muted hover:text-foreground'}`}
+            >
+              <CreditCard className="w-3 h-3" />
+              Personal
+            </button>
+            <button
+              id="tab-split-transactions"
+              onClick={() => setTxTab('splits')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-bold rounded-lg transition-all
+                ${txTab === 'splits' ? 'bg-accent text-white shadow-lg' : 'text-muted hover:text-foreground'}`}
+            >
+              <Users className="w-3 h-3" />
+              Splits
+              {directTransactions.length > 0 && (
+                <span className={`ml-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold
+                  ${txTab === 'splits' ? 'bg-white/20' : 'bg-accent/20 text-accent'}`}>
+                  {directTransactions.length}
                 </span>
-              </div>
-            ))}
+              )}
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar min-h-0 max-h-[300px]">
+            {txTab === 'personal' ? (
+              activities.length === 0 ? (
+                <div className="text-center py-10 text-muted opacity-50">
+                  <CreditCard className="w-10 h-10 mx-auto mb-2" />
+                  <p className="text-xs italic">No transactions yet</p>
+                </div>
+              ) : (
+                activities.map((activity) => (
+                  <div key={activity.id} className="flex items-center gap-3 py-2 border-b border-white/20 last:border-0">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm">
+                      {activity.type === 'expense' ? '💸' : '💰'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{activity.title}</p>
+                      <p className="text-xs text-muted">{activity.date}</p>
+                    </div>
+                    <span className={`text-sm font-semibold ${activity.type === 'expense' ? 'text-danger' : 'text-success'}`}>
+                      {activity.type === 'expense' ? '-' : '+'}{formatCurrency(activity.amount)}
+                    </span>
+                  </div>
+                ))
+              )
+            ) : (
+              directTransactions.length === 0 ? (
+                <div className="text-center py-10 text-muted opacity-50">
+                  <ArrowLeftRight className="w-10 h-10 mx-auto mb-2" />
+                  <p className="text-xs italic">No split expenses yet</p>
+                </div>
+              ) : (
+                directTransactions.map((tx) => {
+                  const isPayment = tx.type === 'PAYMENT';
+                  const iAmPayer = tx.paidByUserId === user?.id?.toString();
+                  
+                  // For expenses: if I paid → I lent money (green), if they paid → I owe (red)
+                  // For payments: if I sent → I settled (neutral/blue), if I received → they settled
+                  const myShare = tx.myShare ?? (tx.amount / 2);
+                  const otherShare = tx.otherShare ?? (tx.amount / 2);
+                  
+                  let badge = '';
+                  let badgeColor = '';
+                  let amountDisplay = '';
+                  let amountColor = '';
+
+                  if (isPayment) {
+                    badge = iAmPayer ? 'You settled' : `${tx.friendName} settled`;
+                    badgeColor = 'text-primary';
+                    amountDisplay = formatCurrency(tx.amount);
+                    amountColor = 'text-primary';
+                  } else if (iAmPayer) {
+                    badge = `You lent`;
+                    badgeColor = 'text-success';
+                    amountDisplay = `+${formatCurrency(otherShare)}`;
+                    amountColor = 'text-success';
+                  } else {
+                    badge = `You owe`;
+                    badgeColor = 'text-danger';
+                    amountDisplay = `-${formatCurrency(myShare)}`;
+                    amountColor = 'text-danger';
+                  }
+
+                  return (
+                    <div key={tx.id} className="flex items-center gap-3 py-2 border-b border-white/20 last:border-0">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0
+                        ${isPayment ? 'bg-primary/20' : iAmPayer ? 'bg-success/20' : 'bg-danger/20'}`}>
+                        {isPayment ? '💳' : iAmPayer ? '↗️' : '↙️'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{tx.description}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className={`text-[10px] font-bold uppercase ${badgeColor}`}>{badge}</span>
+                          {tx.friendName && (
+                            <>
+                              <span className="text-[10px] text-muted">with</span>
+                              <span className="text-[10px] font-semibold text-foreground truncate max-w-[60px]">{tx.friendName}</span>
+                            </>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted">{new Date(tx.date).toLocaleDateString('en-IN')}</p>
+                      </div>
+                      <span className={`text-sm font-bold shrink-0 ${amountColor}`}>
+                        {amountDisplay}
+                      </span>
+                    </div>
+                  );
+                })
+              )
+            )}
           </div>
         </div>
       </div>
@@ -280,4 +389,3 @@ function SummaryCard({ title, value, subtitle, icon, trend, trendUp, color }: {
     </div>
   );
 }
-
