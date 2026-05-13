@@ -353,13 +353,15 @@ export default function ContactsPage() {
               <div className="grid grid-cols-2 gap-4 shrink-0">
                 <div className="glass-card flex items-center gap-4 py-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm
-                    ${netBalance >= 0 ? 'bg-success/20' : 'bg-danger/20'}`}>
-                    <ArrowLeftRight className={`w-5 h-5 ${netBalance >= 0 ? 'text-success' : 'text-danger'}`} />
+                    ${netBalance > 0 ? 'bg-danger/20 text-danger' : netBalance < 0 ? 'bg-success/20 text-success' : 'bg-muted/20 text-muted'}`}>
+                    <ArrowLeftRight className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted uppercase tracking-wider font-bold">Net Balance</p>
-                    <p className={`text-lg font-black ${netBalance >= 0 ? 'text-success' : 'text-danger'}`}>
-                      {netBalance >= 0 ? '+' : ''}{formatCurrency(netBalance)}
+                    <p className={`text-[10px] uppercase tracking-wider font-bold ${netBalance > 0 ? 'text-danger' : netBalance < 0 ? 'text-success' : 'text-muted'}`}>
+                      {netBalance > 0 ? 'You owe' : netBalance < 0 ? 'You lent' : 'Settled Up'}
+                    </p>
+                    <p className={`text-lg font-black ${netBalance > 0 ? 'text-danger' : netBalance < 0 ? 'text-success' : 'text-muted'}`}>
+                      {formatCurrency(Math.abs(netBalance))}
                     </p>
                   </div>
                 </div>
