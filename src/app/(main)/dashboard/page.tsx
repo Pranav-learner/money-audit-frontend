@@ -56,7 +56,17 @@ export default function DashboardPage() {
     );
   }
 
-  const dashboard = summary || { totalBalance: 0, monthlyExpenses: 0, totalSavings: 0, balanceTrend: '', expenseTrend: '', savingsTrend: '', budgetUsedPct: 0 };
+  const dashboard = summary || { 
+    totalBalance: 0, 
+    monthlyExpenses: 0, 
+    totalSavings: 0, 
+    balanceTrend: '', 
+    expenseTrend: '', 
+    savingsTrend: '', 
+    totalBudget: 0, 
+    totalBudgetSpent: 0, 
+    budgetRemainingPct: 0 
+  };
   const chartData = charts || { spendingOverview: [], categoryDistribution: [], expenseTrend: [] };
 
   return (
@@ -66,9 +76,10 @@ export default function DashboardPage() {
         <SummaryCard
           title="Total Balance"
           value={formatCurrency(dashboard.totalBalance)}
+          subtitle="Expense Rate"
           icon={<Wallet className="w-5 h-5" />}
           trend={dashboard.balanceTrend || '0%'}
-          trendUp={!(dashboard.balanceTrend || '').startsWith('-')}
+          trendUp={parseFloat(dashboard.balanceTrend || '0') < 50} // Below 50% is green
           color="from-primary to-emerald-400"
         />
         <SummaryCard
@@ -88,10 +99,12 @@ export default function DashboardPage() {
           color="from-accent to-violet-400"
         />
         <SummaryCard
-          title="Budget Used"
-          value={`${dashboard.budgetUsedPct}%`}
-          subtitle="Budget Usage"
+          title="Budget Status"
+          value={formatCurrency(dashboard.totalBudgetSpent)}
+          subtitle={`Total Budget: ${formatCurrency(dashboard.totalBudget)}`}
           icon={<Target className="w-5 h-5" />}
+          trend={`${dashboard.budgetRemainingPct}% Left`}
+          trendUp={dashboard.budgetRemainingPct > 20}
           color="from-amber-400 to-yellow-400"
         />
       </div>

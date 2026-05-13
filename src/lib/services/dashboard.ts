@@ -4,8 +4,12 @@ export interface DashboardSummary {
   totalBalance: number;
   monthlyExpenses: number;
   totalSavings: number;
-  budgetUsedPct: number;
-  trends: any;
+  balanceTrend: string;
+  expenseTrend: string;
+  savingsTrend: string;
+  totalBudget: number;
+  totalBudgetSpent: number;
+  budgetRemainingPct: number;
 }
 
 export interface DashboardCharts {
