@@ -24,12 +24,13 @@ import {
   getBorrowRate,
   DirectTransaction 
 } from '@/lib/services/direct';
+import { getCategories, Category } from '@/lib/services/categories';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n || 0);
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
 }
 
 export default function ContactsPage() {
@@ -40,6 +41,7 @@ export default function ContactsPage() {
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
   
   // Search modal states
   const [showSearchModal, setShowSearchModal] = useState(false);
@@ -62,6 +64,7 @@ export default function ContactsPage() {
   const [splitType, setSplitType] = useState<'EQUAL' | 'UNEQUAL'>('EQUAL');
   const [myShare, setMyShare] = useState('');
   const [otherShare, setOtherShare] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [viewingReceiptUrl, setViewingReceiptUrl] = useState<string | null>(null);
   
@@ -70,10 +73,21 @@ export default function ContactsPage() {
 
   const fetchData = async () => {
     try {
+      const loadCategories = async () => {
+        try {
+          const data = await getCategories();
+          setCategories(data);
+          if (data.length > 0) setSelectedCategoryId(data[0].id);
+        } catch (err) {
+          console.error('Failed to load categories', err);
+        }
+      };
+
       const [friendsData, requestsData] = await Promise.all([
         getFriends(),
         getPendingRequests()
       ]);
+      loadCategories();
       setFriends(friendsData);
       setRequests(requestsData);
     } catch (error) {
@@ -182,6 +196,7 @@ export default function ContactsPage() {
         const data = res.data;
         setExpAmount(data.amount?.toString() || '');
         setExpDesc(data.merchant || 'Receipt Expense');
+        if (data.suggestedCategoryId) setSelectedCategoryId(data.suggestedCategoryId);
         
         // Save the receipt ID to link it during confirm
         (window as any).lastReceiptId = data.receiptId;
@@ -222,9 +237,10 @@ export default function ContactsPage() {
         // If we have a receipt, use the confirm-group endpoint
         await api.post(`/receipts/${receiptId}/confirm-group`, {
           groupId: null, // null for direct expense
-          otherUserId: selectedFriend.userId, // We need to make sure backend supports this or we use friendId
+          otherUserId: selectedFriend.userId, 
           amount: total,
           title: expDesc,
+          categoryId: selectedCategoryId,
           expenseDate: new Date().toISOString().split('T')[0],
           splitType: splitType,
           splits: splitType === 'UNEQUAL' ? [
@@ -237,12 +253,15 @@ export default function ContactsPage() {
         // Standard flow
         await createDirectExpense({
           friendId: selectedFriend.userId,
-          amount: total,
-          description: expDesc,
+          totalAmount: total,
+          title: expDesc,
+          categoryId: selectedCategoryId,
+          expenseDate: new Date().toISOString().split('T')[0],
+          paidByUserId: paidBy === 'you' ? user?.id : selectedFriend.userId,
           splitType: splitType,
           myShare: splitType === 'UNEQUAL' ? Number(myShare) : undefined,
           otherShare: splitType === 'UNEQUAL' ? Number(otherShare) : undefined
-        });
+        } as any);
       }
       
       toast.success(`Expense split with ${selectedFriend.name}!`);
@@ -651,9 +670,25 @@ export default function ContactsPage() {
                   <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Total Amount (₹)</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-lg">₹</span>
-                    <input type="number" value={expAmount} onChange={e => setExpAmount(e.target.value)} placeholder="0" className="input-field py-3 pl-10 text-base font-medium" />
+                    <input type="number" step="0.01" value={expAmount} onChange={e => setExpAmount(e.target.value)} placeholder="0" className="input-field py-3 pl-10 text-base font-medium" />
                   </div>
                 </div>
+              </div>
+ 
+              {/* Category Selection */}
+              <div>
+                <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Category</label>
+                <select 
+                  value={selectedCategoryId} 
+                  onChange={e => setSelectedCategoryId(e.target.value)}
+                  className="input-field py-3 text-base appearance-none bg-white/5 border-white/10 text-foreground cursor-pointer"
+                >
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id} className="bg-background text-foreground">
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Who Paid */}
@@ -705,14 +740,14 @@ export default function ContactsPage() {
                     <p className="text-sm font-medium text-muted">Your share</p>
                     <div className="relative w-36">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs">₹</span>
-                      <input type="number" value={myShare} onChange={e => setMyShare(e.target.value)} placeholder="0" className="input-field py-2.5 pl-8 text-base font-medium" />
+                      <input type="number" step="0.01" value={myShare} onChange={e => setMyShare(e.target.value)} placeholder="0" className="input-field py-2.5 pl-8 text-base font-medium" />
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <p className="text-sm font-medium text-muted">{selectedFriend?.name}&apos;s share</p>
                     <div className="relative w-36">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-xs">₹</span>
-                      <input type="number" value={otherShare} onChange={e => setOtherShare(e.target.value)} placeholder="0" className="input-field py-2.5 pl-8 text-base font-medium" />
+                      <input type="number" step="0.01" value={otherShare} onChange={e => setOtherShare(e.target.value)} placeholder="0" className="input-field py-2.5 pl-8 text-base font-medium" />
                     </div>
                   </div>
                   {Number(expAmount) > 0 && (
@@ -729,8 +764,8 @@ export default function ContactsPage() {
               <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
                 <p className="text-xs text-primary/80 italic leading-relaxed">
                   {paidBy === 'you' 
-                    ? `You paid ₹${expAmount || 0}. ${selectedFriend?.name} will owe you ₹${splitType === 'EQUAL' ? (Number(expAmount)/2).toFixed(0) : (otherShare || 0)}.`
-                    : `${selectedFriend?.name} paid ₹${expAmount || 0}. You will owe them ₹${splitType === 'EQUAL' ? (Number(expAmount)/2).toFixed(0) : (myShare || 0)}.`
+                    ? `You paid ₹${expAmount || 0}. ${selectedFriend?.name} will owe you ₹${splitType === 'EQUAL' ? (Number(expAmount)/2).toFixed(2) : (otherShare || 0)}.`
+                    : `${selectedFriend?.name} paid ₹${expAmount || 0}. You will owe them ₹${splitType === 'EQUAL' ? (Number(expAmount)/2).toFixed(2) : (myShare || 0)}.`
                   }
                 </p>
               </div>
