@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { 
   Search, UserPlus, UserCheck, UserX, Check, X, 
   ArrowLeftRight, Plus, Banknote, User, Users,
-  MessageSquare
+  PieChart
 } from 'lucide-react';
 import { 
   getFriends, 
@@ -20,7 +20,8 @@ import {
   getDirectExpenses, 
   createDirectExpense, 
   createDirectPayment, 
-  getNetBalance, 
+  getNetBalance,
+  getBorrowRate,
   DirectTransaction 
 } from '@/lib/services/direct';
 import { useAuth } from '@/context/AuthContext';
@@ -48,6 +49,8 @@ export default function ContactsPage() {
   // Direct expense states
   const [expenses, setExpenses] = useState<DirectTransaction[]>([]);
   const [netBalance, setNetBalance] = useState(0);
+  const [borrowLend, setBorrowLend] = useState({ borrowCount: 0, lendCount: 0 });
+
   const [showExpenseModal, setShowExpenseModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   
@@ -106,12 +109,14 @@ export default function ContactsPage() {
     if (selectedFriend) {
       const fetchHistory = async () => {
         try {
-          const [history, balance] = await Promise.all([
+          const [history, balance, rate] = await Promise.all([
             getDirectExpenses(selectedFriend.userId),
-            getNetBalance(selectedFriend.userId)
+            getNetBalance(selectedFriend.userId),
+            getBorrowRate(selectedFriend.userId)
           ]);
           setExpenses(history);
           setNetBalance(balance);
+          setBorrowLend(rate);
         } catch (error) {
           console.error('Failed to fetch history:', error);
         }
@@ -193,12 +198,14 @@ export default function ContactsPage() {
       setMyShare(''); setOtherShare('');
       setShowExpenseModal(false);
       
-      const [history, balance] = await Promise.all([
+      const [history, balance, rate] = await Promise.all([
         getDirectExpenses(selectedFriend.userId),
-        getNetBalance(selectedFriend.userId)
+        getNetBalance(selectedFriend.userId),
+        getBorrowRate(selectedFriend.userId)
       ]);
       setExpenses(history);
       setNetBalance(balance);
+      setBorrowLend(rate);
     } catch (error) {
       toast.error('Failed to record expense');
     }
@@ -211,12 +218,14 @@ export default function ContactsPage() {
       toast.success(`Payment recorded!`);
       setPayAmount('');
       setShowPaymentModal(false);
-      const [history, balance] = await Promise.all([
+      const [history, balance, rate] = await Promise.all([
         getDirectExpenses(selectedFriend.userId),
-        getNetBalance(selectedFriend.userId)
+        getNetBalance(selectedFriend.userId),
+        getBorrowRate(selectedFriend.userId)
       ]);
       setExpenses(history);
       setNetBalance(balance);
+      setBorrowLend(rate);
     } catch (error) {
       toast.error('Failed to record payment');
     }
@@ -367,11 +376,11 @@ export default function ContactsPage() {
                 </div>
                 <div className="glass-card flex items-center gap-4 py-3">
                   <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center shadow-sm text-accent">
-                    <MessageSquare className="w-5 h-5" />
+                    <PieChart className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted uppercase tracking-wider font-bold">History</p>
-                    <p className="text-lg font-black text-foreground">{expenses.length} records</p>
+                    <p className="text-[10px] text-muted uppercase tracking-wider font-bold">Borrow / Lend</p>
+                    <p className="text-lg font-black text-foreground">{borrowLend.borrowCount} : {borrowLend.lendCount}</p>
                   </div>
                 </div>
               </div>

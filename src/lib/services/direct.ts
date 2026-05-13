@@ -48,3 +48,13 @@ export const getNetBalance = async (friendId: string): Promise<number> => {
   const res = await api.get(`/direct/${friendId}/balance`);
   return res.data;
 };
+
+export interface BorrowLendRatio {
+  borrowCount: number;
+  lendCount: number;
+}
+
+export const getBorrowRate = async (friendId: string): Promise<BorrowLendRatio> => {
+  const res = await api.get(`/direct/${friendId}/borrow-rate`);
+  return res.data;
+};
