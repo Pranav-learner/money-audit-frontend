@@ -761,8 +761,6 @@ export default function ContactsPage() {
           </div>
         </div>
       )}
-        </div>
-      )}
 
       {/* Receipt Viewer Modal */}
       {viewingReceiptUrl && (
