@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { 
   Search, UserPlus, UserCheck, UserX, Check, X, 
   ArrowLeftRight, Plus, Banknote, User, Users,
@@ -25,6 +26,11 @@ import {
   DirectTransaction 
 } from '@/lib/services/direct';
 import { getCategories, Category } from '@/lib/services/categories';
+import { 
+  getRazorpayKey, 
+  createRazorpayOrder, 
+  verifyRazorpayPayment 
+} from '@/lib/services/payments';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -70,6 +76,18 @@ export default function ContactsPage() {
   
   const [payAmount, setPayAmount] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Load Razorpay Script
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
   const fetchData = async () => {
     try {
@@ -285,11 +303,14 @@ export default function ContactsPage() {
 
   const handlePayment = async () => {
     if (!payAmount || !selectedFriend) { toast.error('Enter amount'); return; }
+    
+    setIsProcessingPayment(true);
     try {
-      await createDirectPayment(selectedFriend.userId, Number(payAmount), 'Payment Settlement');
-      toast.success(`Payment recorded!`);
+      await createDirectPayment(selectedFriend.userId, Number(payAmount), 'Manual Settlement');
+      toast.success(`Payment recorded manually!`);
       setPayAmount('');
       setShowPaymentModal(false);
+      
       const [history, balance, rate] = await Promise.all([
         getDirectExpenses(selectedFriend.userId),
         getNetBalance(selectedFriend.userId),
@@ -300,6 +321,85 @@ export default function ContactsPage() {
       setBorrowLend(rate);
     } catch (error) {
       toast.error('Failed to record payment');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleRazorpayPayment = async () => {
+    if (!payAmount || !selectedFriend) { toast.error('Enter amount'); return; }
+    
+    const amount = Number(payAmount);
+    
+    // Restriction: Cannot pay more than owed
+    if (amount > netBalance) {
+      toast.error(`You can't pay more than what you owe (${formatCurrency(netBalance)})`);
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    
+    try {
+      const res = await loadRazorpayScript();
+      if (!res) {
+        toast.error('Razorpay SDK failed to load. Check your connection.');
+        return;
+      }
+
+      const keyId = await getRazorpayKey();
+      const orderId = await createRazorpayOrder(amount);
+
+      const options = {
+        key: keyId,
+        amount: amount * 100, // already in paise from backend? No, createOrder takes BigDecimal and converts.
+        currency: 'INR',
+        name: 'Money Audit',
+        description: `Settlement with ${selectedFriend.name}`,
+        order_id: orderId,
+        handler: async (response: any) => {
+          try {
+            await verifyRazorpayPayment({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              amount: amount,
+              toUserId: selectedFriend.userId,
+              note: 'Razorpay Settlement'
+            });
+            
+            toast.success('Payment successful and verified!');
+            setShowPaymentModal(false);
+            setPayAmount('');
+            
+            // Refresh data
+            const [history, balance, rate] = await Promise.all([
+              getDirectExpenses(selectedFriend.userId),
+              getNetBalance(selectedFriend.userId),
+              getBorrowRate(selectedFriend.userId)
+            ]);
+            setExpenses(history);
+            setNetBalance(balance);
+            setBorrowLend(rate);
+          } catch (err) {
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+        },
+        theme: {
+          color: '#3B82F6',
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      console.error('Payment failed:', error);
+      toast.error('Failed to initiate payment');
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
@@ -329,9 +429,14 @@ export default function ContactsPage() {
           {/* Pending Requests */}
           {requests.length > 0 && (
             <div className="glass-card border-l-4 border-warning shrink-0">
-              <h3 className="text-xs font-bold text-warning uppercase tracking-wider mb-3">
-                Pending Requests ({requests.length})
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-warning uppercase tracking-wider">
+                  Pending Requests ({requests.length})
+                </h3>
+                <Link href="/notifications" className="text-[10px] font-bold text-primary hover:underline">
+                  View Hub
+                </Link>
+              </div>
               <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1">
                 {requests.map(req => (
                   <div key={req.friendshipId} className="flex items-center gap-2 py-1.5 border-b border-white/20 last:border-0">
@@ -782,17 +887,80 @@ export default function ContactsPage() {
       {/* Record Payment Modal */}
       {showPaymentModal && (
         <div className="modal-overlay" onClick={() => setShowPaymentModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-foreground mb-5">Settle Balance</h3>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">Amount (₹)</label>
-              <input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="0" className="input-field" />
-              <p className="text-xs text-muted mt-2">Record a settlement with {selectedFriend?.name}</p>
+          <div className="modal-content max-w-md w-full p-8" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-2xl font-bold text-foreground">Settle Up</h3>
+              <button onClick={() => setShowPaymentModal(false)} className="text-muted hover:text-foreground">
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowPaymentModal(false)} className="btn-secondary flex-1 justify-center">Cancel</button>
-              <button onClick={handlePayment} className="btn-primary flex-1 justify-center">Settle</button>
+
+            <div className="space-y-6">
+              <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+                  <Banknote className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted uppercase font-bold tracking-wider">Currently Owed</p>
+                  <p className={`text-xl font-black ${netBalance > 0 ? 'text-danger' : 'text-success'}`}>
+                    {formatCurrency(Math.abs(netBalance))}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-muted uppercase tracking-wider mb-2">Amount to Settle (₹)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-lg font-medium">₹</span>
+                  <input 
+                    type="number" 
+                    value={payAmount} 
+                    onChange={e => setPayAmount(e.target.value)} 
+                    placeholder="0.00" 
+                    className="input-field py-3 pl-10 text-xl font-black" 
+                  />
+                </div>
+                <p className="text-[10px] text-muted mt-2 italic text-center">
+                  Settling balance with {selectedFriend?.name}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 pt-4">
+                <button 
+                  onClick={handleRazorpayPayment} 
+                  disabled={isProcessingPayment || netBalance <= 0}
+                  className={`btn-primary justify-center py-4 text-sm shadow-lg shadow-primary/20
+                    ${(isProcessingPayment || netBalance <= 0) ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                >
+                  {isProcessingPayment ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white/80"></div>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Banknote className="w-4 h-4" /> Pay via Razorpay
+                    </span>
+                  )}
+                </button>
+                
+                <div className="relative flex items-center py-2">
+                  <div className="flex-grow border-t border-white/10"></div>
+                  <span className="flex-shrink mx-4 text-[10px] text-muted uppercase font-bold tracking-widest">OR</span>
+                  <div className="flex-grow border-t border-white/10"></div>
+                </div>
+
+                <button 
+                  onClick={handlePayment} 
+                  disabled={isProcessingPayment}
+                  className="btn-secondary justify-center py-4 text-sm hover:bg-white/10"
+                >
+                  <Check className="w-4 h-4 mr-2" /> Record Manual Settlement
+                </button>
+              </div>
             </div>
+
+            <p className="text-[10px] text-muted mt-6 text-center leading-relaxed">
+              Use &quot;Pay via Razorpay&quot; for instant digital transfers.<br/>
+              Use &quot;Record Manual Settlement&quot; if you&apos;ve already paid via UPI, Cash, etc.
+            </p>
           </div>
         </div>
       )}

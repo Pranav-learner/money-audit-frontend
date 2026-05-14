@@ -102,7 +102,7 @@ export default function GroupsPage() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-foreground">{group.name}</h3>
-                <p className="text-xs text-muted mt-1">{group.members.length} members • Created {group.createdAt}</p>
+                <p className="text-xs text-muted mt-1">{(group.members || []).length} members • Created {group.createdAt}</p>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-white/20">
                 <div>
@@ -114,14 +114,14 @@ export default function GroupsPage() {
                 </Link>
               </div>
               <div className="flex items-center gap-1">
-                {group.members.slice(0, 4).map((member, i) => (
+                {(group.members || []).slice(0, 4).map((member, i) => (
                   <div key={i} className="w-7 h-7 rounded-full bg-gradient-to-br from-accent/30 to-primary/30 flex items-center justify-center text-[10px] font-bold text-foreground -ml-1 first:ml-0 border-2 border-white/60">
                     {member.charAt(0)}
                   </div>
                 ))}
-                {group.members.length > 4 && (
+                {(group.members || []).length > 4 && (
                   <div className="w-7 h-7 rounded-full bg-white/50 flex items-center justify-center text-[10px] font-bold text-muted -ml-1 border-2 border-white/60">
-                    +{group.members.length - 4}
+                    +{(group.members || []).length - 4}
                   </div>
                 )}
               </div>

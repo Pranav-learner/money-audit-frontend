@@ -14,10 +14,12 @@ import {
   Wallet,
   ArrowLeftRight,
   Target,
+  Bell,
 } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/notifications', label: 'Notifications', icon: Bell },
   { href: '/expenses', label: 'Expenses', icon: Receipt },
   { href: '/budgets', label: 'Budgets', icon: Target },
   { href: '/savings', label: 'Saving/Income', icon: PiggyBank },
