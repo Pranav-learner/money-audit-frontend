@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Bell,
+  FolderTree,
   LayoutDashboard,
   PiggyBank,
   Receipt,
@@ -21,6 +22,7 @@ export interface NavItem {
 export const PRIMARY_NAV: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Expenses', href: '/expenses', icon: Receipt },
+  { label: 'Categories', href: '/categories', icon: FolderTree },
   { label: 'Budgets', href: '/budgets', icon: Target },
   { label: 'Savings', href: '/savings', icon: PiggyBank },
   { label: 'Groups', href: '/groups', icon: Users },
@@ -43,6 +45,7 @@ export const MOBILE_NAV: NavItem[] = [
 export const SEGMENT_LABELS: Record<string, string> = {
   dashboard: 'Dashboard',
   expenses: 'Expenses',
+  categories: 'Categories',
   budgets: 'Budgets',
   savings: 'Savings',
   groups: 'Groups',
