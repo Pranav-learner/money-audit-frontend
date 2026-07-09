@@ -1,11 +1,7 @@
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="min-h-screen flex items-center justify-center p-8">
-      {children}
-    </div>
-  );
+import type { ReactNode } from 'react';
+import { PublicLayout } from '@/shared/layouts/public-layout';
+
+/** Public (unauthenticated) routes: login, register. */
+export default function AuthLayout({ children }: { children: ReactNode }) {
+  return <PublicLayout>{children}</PublicLayout>;
 }

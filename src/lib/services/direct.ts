@@ -14,6 +14,8 @@ export interface DirectTransaction {
   friendName?: string;
   friendId?: string;
   receiptUrl?: string;
+  description?: string;
+  note?: string;
 }
 
 export interface CreateDirectExpenseRequest {

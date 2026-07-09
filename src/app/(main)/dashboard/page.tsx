@@ -130,7 +130,7 @@ export default function DashboardPage() {
               <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
               <Tooltip
                 contentStyle={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.8)', borderRadius: '12px', backdropFilter: 'blur(8px)' }}
-                formatter={(value: number) => [formatCurrency(value), 'Spent']}
+                formatter={(value) => [formatCurrency(Number(value)), 'Spent']}
               />
               <Bar dataKey="amount" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
               <defs>
@@ -166,7 +166,7 @@ export default function DashboardPage() {
               </Pie>
               <Tooltip
                 contentStyle={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.8)', borderRadius: '12px' }}
-                formatter={(value: number) => [formatCurrency(value), '']}
+                formatter={(value) => [formatCurrency(Number(value)), '']}
               />
               <Legend
                 verticalAlign="bottom"
@@ -194,7 +194,7 @@ export default function DashboardPage() {
               <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} />
               <Tooltip
                 contentStyle={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.8)', borderRadius: '12px' }}
-                formatter={(value: number) => [formatCurrency(value), 'Total']}
+                formatter={(value) => [formatCurrency(Number(value)), 'Total']}
               />
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -346,7 +346,7 @@ export default function DashboardPage() {
               <YAxis type="category" dataKey="category" tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} width={80} />
               <Tooltip
                 contentStyle={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.8)', borderRadius: '12px' }}
-                formatter={(value: number) => [formatCurrency(value), '']}
+                formatter={(value) => [formatCurrency(Number(value)), '']}
               />
               <Bar dataKey="budget" fill="rgba(148,163,184,0.2)" radius={[0, 6, 6, 0]} name="Budget" />
               <Bar dataKey="spent" fill="#2dd4a8" radius={[0, 6, 6, 0]} name="Spent" />

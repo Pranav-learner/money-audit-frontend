@@ -495,7 +495,7 @@ export default function ContactsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{f.name}</p>
-                      <p className="text-[10px] text-muted truncate">Friend since {new Date(f.since).toLocaleDateString()}</p>
+                      <p className="text-[10px] text-muted truncate">Friend since {f.since ? new Date(f.since).toLocaleDateString() : '—'}</p>
                     </div>
                     {selectedFriend?.friendshipId === f.friendshipId && (
                       <div className="w-1.5 h-1.5 rounded-full bg-primary" />

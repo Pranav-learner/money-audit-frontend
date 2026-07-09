@@ -16,6 +16,7 @@ export interface DashboardCharts {
   spendingOverview: any;
   categoryDistribution: any;
   expenseTrend: any;
+  budgetUsage?: any;
 }
 
 export interface RecentActivity {

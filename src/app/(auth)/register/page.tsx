@@ -1,153 +1,163 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Eye, EyeOff, Lock, Mail, Phone, User, Wallet } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { z } from 'zod';
 import { useAuth } from '@/context/AuthContext';
-import { Wallet, User, Mail, Phone, Lock, Eye, EyeOff } from 'lucide-react';
-import toast from 'react-hot-toast';
+import type { ApiError } from '@/lib/api';
+import { Button } from '@/shared/components/ui/button';
+import { Card, CardContent, CardHeader } from '@/shared/components/ui/card';
+import { FormItem, FormLabel, FormMessage } from '@/shared/components/ui/form';
+import { Input } from '@/shared/components/ui/input';
+import { toast } from '@/shared/components/ui/toast';
+import { useZodForm } from '@/shared/lib/use-zod-form';
+
+const registerSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(80),
+  email: z.string().min(1, 'Email is required').email('Enter a valid email'),
+  phone: z.string().min(7, 'Enter a valid phone number').max(20),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+type RegisterValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register } = useAuth();
+  const { register: registerUser } = useAuth();
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !email || !phone || !password) {
-      toast.error('Please fill in all fields');
-      return;
-    }
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
-    setIsSubmitting(true);
+  const form = useZodForm(registerSchema, {
+    defaultValues: { name: '', email: '', phone: '', password: '' },
+  });
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = form;
+
+  const onSubmit = handleSubmit(async (values: RegisterValues) => {
     try {
-      await register(name, email, phone, password);
-      toast.success('Account created successfully!');
+      await registerUser(values.name, values.email, values.phone, values.password);
+      toast.success('Account created — welcome!');
       router.push('/dashboard');
-    } catch {
-      toast.error('Registration failed. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+    } catch (err) {
+      toast.error((err as ApiError)?.message ?? 'Registration failed. Please try again.');
     }
-  };
+  });
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      {/* Logo */}
-      <div className="flex flex-col items-center text-center mb-12">
-        <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-tr from-primary via-primary to-accent flex items-center justify-center mb-8 shadow-2xl relative">
-          <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full -z-10 animate-pulse"></div>
-          <Wallet className="w-12 h-12 text-white" />
-        </div>
-        <h1 className="text-5xl font-extrabold text-foreground tracking-tight mb-4">Create Account</h1>
-        <p className="text-muted text-xl max-w-sm">Start tracking your finances</p>
+    <div className="space-y-8">
+      <div className="flex flex-col items-center text-center">
+        <span className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+          <Wallet className="size-7" aria-hidden />
+        </span>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Create your account</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Start tracking your finances with Money Audit</p>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="glass-card p-10 space-y-8">
-        <div>
-          <label className="block text-sm font-semibold text-foreground mb-3 ml-1">Full Name</label>
-          <div className="relative group">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center transition-colors group-focus-within:text-primary">
-              <User className="w-5 h-5 text-muted" />
-            </div>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
-              className="input-field"
-              style={{ paddingLeft: '3.5rem' }}
-              id="register-name"
-            />
-          </div>
-        </div>
+      <Card>
+        <CardHeader className="sr-only">
+          <h2>Sign up</h2>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <form onSubmit={onSubmit} className="space-y-5" noValidate>
+            <FormItem>
+              <FormLabel htmlFor="register-name" required>
+                Full name
+              </FormLabel>
+              <div className="relative">
+                <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                <Input
+                  id="register-name"
+                  autoComplete="name"
+                  placeholder="Jane Doe"
+                  className="pl-9"
+                  aria-invalid={!!errors.name}
+                  {...register('name')}
+                />
+              </div>
+              <FormMessage>{errors.name?.message}</FormMessage>
+            </FormItem>
 
-        <div>
-          <label className="block text-sm font-semibold text-foreground mb-3 ml-1">Email Address</label>
-          <div className="relative group">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center transition-colors group-focus-within:text-primary">
-              <Mail className="w-5 h-5 text-muted" />
-            </div>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="input-field"
-              style={{ paddingLeft: '3.5rem' }}
-              id="register-email"
-            />
-          </div>
-        </div>
+            <FormItem>
+              <FormLabel htmlFor="register-email" required>
+                Email address
+              </FormLabel>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                <Input
+                  id="register-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  className="pl-9"
+                  aria-invalid={!!errors.email}
+                  {...register('email')}
+                />
+              </div>
+              <FormMessage>{errors.email?.message}</FormMessage>
+            </FormItem>
 
-        <div>
-          <label className="block text-sm font-semibold text-foreground mb-3 ml-1">Phone Number</label>
-          <div className="relative group">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center transition-colors group-focus-within:text-primary">
-              <Phone className="w-5 h-5 text-muted" />
-            </div>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 9876543210"
-              className="input-field"
-              style={{ paddingLeft: '3.5rem' }}
-              id="register-phone"
-            />
-          </div>
-        </div>
+            <FormItem>
+              <FormLabel htmlFor="register-phone" required>
+                Phone number
+              </FormLabel>
+              <div className="relative">
+                <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                <Input
+                  id="register-phone"
+                  type="tel"
+                  autoComplete="tel"
+                  placeholder="+91 98765 43210"
+                  className="pl-9"
+                  aria-invalid={!!errors.phone}
+                  {...register('phone')}
+                />
+              </div>
+              <FormMessage>{errors.phone?.message}</FormMessage>
+            </FormItem>
 
-        <div>
-          <label className="block text-sm font-semibold text-foreground mb-3 ml-1">Password</label>
-          <div className="relative group">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center transition-colors group-focus-within:text-primary">
-              <Lock className="w-5 h-5 text-muted" />
-            </div>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min 6 characters"
-              className="input-field"
-              style={{ paddingLeft: '3.5rem', paddingRight: '3.5rem' }}
-              id="register-password"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors p-1"
-            >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
+            <FormItem>
+              <FormLabel htmlFor="register-password" required>
+                Password
+              </FormLabel>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                <Input
+                  id="register-password"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  placeholder="At least 6 characters"
+                  className="px-9"
+                  aria-invalid={!!errors.password}
+                  {...register('password')}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+              <FormMessage>{errors.password?.message}</FormMessage>
+            </FormItem>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="btn-primary w-full justify-center py-4 text-lg font-bold disabled:opacity-60 shadow-lg"
-          id="register-submit"
-        >
-          {isSubmitting ? 'Creating Account...' : 'Create Account'}
-        </button>
+            <Button id="register-submit" type="submit" className="w-full" loading={isSubmitting}>
+              {isSubmitting ? 'Creating account…' : 'Create account'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
-        <p className="text-center text-base text-muted pt-2">
-          Already have an account?{' '}
-          <Link href="/login" className="text-primary font-bold hover:underline">
-            Sign In
-          </Link>
-        </p>
-      </form>
+      <p className="text-center text-sm text-muted-foreground">
+        Already have an account?{' '}
+        <Link href="/login" className="font-medium text-primary hover:underline">
+          Sign in
+        </Link>
+      </p>
     </div>
   );
 }
