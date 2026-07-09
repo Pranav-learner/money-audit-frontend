@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { 
-  Search, UserPlus, UserCheck, UserX, Check, X, 
+import {
+  Search, UserPlus, Check, X,
   ArrowLeftRight, Plus, Banknote, User, Users,
   PieChart, Camera, FileText
 } from 'lucide-react';
@@ -23,7 +23,8 @@ import {
   createDirectPayment, 
   getNetBalance,
   getBorrowRate,
-  DirectTransaction 
+  DirectTransaction,
+  CreateDirectExpenseRequest
 } from '@/lib/services/direct';
 import { getCategories, Category } from '@/lib/services/categories';
 import { 
@@ -34,6 +35,29 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
+
+/** Shape of a user returned by the `/users/search` endpoint. */
+interface SearchUser {
+  userId: string;
+  name: string;
+  phone: string;
+  email: string;
+  relationshipStatus: string;
+}
+
+/** Successful checkout callback payload from the Razorpay SDK. */
+interface RazorpayResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+declare global {
+  interface Window {
+    /** Receipt id stashed after an OCR upload, consumed on expense confirm. */
+    lastReceiptId?: string | null;
+  }
+}
 
 function formatCurrency(n: number) {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
@@ -52,7 +76,7 @@ export default function ContactsPage() {
   // Search modal states
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQueryGlobal, setSearchQueryGlobal] = useState('');
-  const [searchSuggestions, setSearchSuggestions] = useState<any[]>([]);
+  const [searchSuggestions, setSearchSuggestions] = useState<SearchUser[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   
   // Direct expense states
@@ -116,6 +140,7 @@ export default function ContactsPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, []);
 
@@ -170,7 +195,7 @@ export default function ContactsPage() {
       await acceptFriendRequest(id);
       toast.success('Friend request accepted!');
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error('Failed to accept request');
     }
   };
@@ -180,7 +205,7 @@ export default function ContactsPage() {
       await rejectFriendRequest(id);
       toast.success('Request rejected');
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error('Failed to reject request');
     }
   };
@@ -193,7 +218,7 @@ export default function ContactsPage() {
       setSearchSuggestions([]);
       setShowSearchModal(false);
       fetchData();
-    } catch (error) {
+    } catch {
       toast.error('Failed to send request');
     }
   };
@@ -217,7 +242,7 @@ export default function ContactsPage() {
         if (data.suggestedCategoryId) setSelectedCategoryId(data.suggestedCategoryId);
         
         // Save the receipt ID to link it during confirm
-        (window as any).lastReceiptId = data.receiptId;
+        window.lastReceiptId = data.receiptId;
         
         toast.success('Receipt scanned successfully!');
       } catch (error) {
@@ -236,7 +261,6 @@ export default function ContactsPage() {
     }
 
     const total = Number(expAmount);
-    let payloadShare: any = {};
 
     if (splitType === 'UNEQUAL') {
       const s1 = Number(myShare);
@@ -245,11 +269,10 @@ export default function ContactsPage() {
         toast.error('Shares must sum up to total amount');
         return;
       }
-      payloadShare = { myShare: s1, otherShare: s2 };
     }
 
     try {
-      const receiptId = (window as any).lastReceiptId;
+      const receiptId = window.lastReceiptId;
       
       if (receiptId) {
         // If we have a receipt, use the confirm-group endpoint
@@ -266,20 +289,22 @@ export default function ContactsPage() {
             { userId: selectedFriend.userId, amount: Number(otherShare) }
           ] : []
         });
-        (window as any).lastReceiptId = null;
+        window.lastReceiptId = null;
       } else {
-        // Standard flow
-        await createDirectExpense({
+        // Standard flow. `categoryId` is an extra field the backend accepts but
+        // that isn't part of the base request type, so widen it locally.
+        const expensePayload: CreateDirectExpenseRequest & { categoryId: string } = {
           friendId: selectedFriend.userId,
           totalAmount: total,
           title: expTitle,
           categoryId: selectedCategoryId,
           expenseDate: new Date().toISOString().split('T')[0],
-          paidByUserId: paidBy === 'you' ? user?.id : selectedFriend.userId,
+          paidByUserId: (paidBy === 'you' ? user?.id : selectedFriend.userId) as string,
           splitType: splitType,
           myShare: splitType === 'UNEQUAL' ? Number(myShare) : undefined,
           otherShare: splitType === 'UNEQUAL' ? Number(otherShare) : undefined
-        } as any);
+        };
+        await createDirectExpense(expensePayload);
       }
       
       toast.success(`Expense split with ${selectedFriend.name}!`);
@@ -319,7 +344,7 @@ export default function ContactsPage() {
       setExpenses(history);
       setNetBalance(balance);
       setBorrowLend(rate);
-    } catch (error) {
+    } catch {
       toast.error('Failed to record payment');
     } finally {
       setIsProcessingPayment(false);
@@ -356,7 +381,7 @@ export default function ContactsPage() {
         name: 'Money Audit',
         description: `Settlement with ${selectedFriend.name}`,
         order_id: orderId,
-        handler: async (response: any) => {
+        handler: async (response: RazorpayResponse) => {
           try {
             await verifyRazorpayPayment({
               razorpayOrderId: response.razorpay_order_id,
@@ -380,7 +405,7 @@ export default function ContactsPage() {
             setExpenses(history);
             setNetBalance(balance);
             setBorrowLend(rate);
-          } catch (err) {
+          } catch {
             toast.error('Payment verification failed. Please contact support.');
           }
         },
@@ -393,7 +418,7 @@ export default function ContactsPage() {
         },
       };
 
-      const rzp = new (window as any).Razorpay(options);
+      const rzp = new window.Razorpay!(options);
       rzp.open();
     } catch (error) {
       console.error('Payment failed:', error);
@@ -975,9 +1000,12 @@ export default function ContactsPage() {
               </button>
             </div>
             <div className="bg-white rounded-2xl overflow-hidden shadow-2xl relative group">
-              <img 
-                src={viewingReceiptUrl} 
-                alt="Receipt" 
+              {/* Remote receipt image from an arbitrary storage host; using next/image
+                  would require configuring remotePatterns, so keep a plain <img>. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={viewingReceiptUrl}
+                alt="Receipt"
                 className="max-h-[85vh] object-contain"
               />
               <a 

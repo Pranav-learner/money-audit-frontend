@@ -27,6 +27,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Restore the persisted session on mount (localStorage is client-only, so
+    // this one-time hydration from an external store is intentional).
+    /* eslint-disable react-hooks/set-state-in-effect */
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     if (savedToken && savedUser) {
@@ -34,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(JSON.parse(savedUser));
     }
     setIsLoading(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   const login = async (email: string, password: string) => {

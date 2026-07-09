@@ -13,10 +13,10 @@ export interface DashboardSummary {
 }
 
 export interface DashboardCharts {
-  spendingOverview: any;
-  categoryDistribution: any;
-  expenseTrend: any;
-  budgetUsage?: any;
+  spendingOverview: unknown;
+  categoryDistribution: unknown;
+  expenseTrend: unknown;
+  budgetUsage?: unknown;
 }
 
 export interface RecentActivity {

@@ -15,12 +15,12 @@ export const getExpenses = async (month?: string): Promise<Expense[]> => {
   return res.data;
 };
 
-export const createExpense = async (data: any): Promise<Expense> => {
+export const createExpense = async (data: object): Promise<Expense> => {
   const res = await api.post('/expenses', data);
   return res.data;
 };
 
-export const updateExpense = async (id: string, data: any): Promise<Expense> => {
+export const updateExpense = async (id: string, data: object): Promise<Expense> => {
   const res = await api.put(`/expenses/${id}`, data);
   return res.data;
 };

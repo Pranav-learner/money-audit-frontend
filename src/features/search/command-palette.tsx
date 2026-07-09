@@ -58,13 +58,11 @@ export function CommandPalette() {
   }, [commandOpen, setCommandOpen]);
 
   useEffect(() => {
-    if (commandOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setRecent(readRecent());
-    } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setQuery('');
-    }
+    // Sync local UI state to the open/close transition (external trigger).
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (commandOpen) setRecent(readRecent());
+    else setQuery('');
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [commandOpen]);
 
   const pushRecent = useCallback((term: string) => {

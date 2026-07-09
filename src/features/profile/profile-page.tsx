@@ -10,7 +10,6 @@ import { useGoals, useHealthScore } from '@/features/intelligence/api';
 import { useProfile } from '@/features/profile/use-profile';
 import { PageHeader } from '@/shared/components/common/page-header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
-import { Badge } from '@/shared/components/ui/badge';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { FormItem, FormLabel, FormMessage } from '@/shared/components/ui/form';

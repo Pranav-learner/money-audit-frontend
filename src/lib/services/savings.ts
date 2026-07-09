@@ -12,12 +12,12 @@ export const getSavings = async (): Promise<Saving[]> => {
   return res.data;
 };
 
-export const createSaving = async (data: any): Promise<Saving> => {
+export const createSaving = async (data: object): Promise<Saving> => {
   const res = await api.post('/savings', data);
   return res.data;
 };
 
-export const updateSaving = async (id: string, data: any): Promise<Saving> => {
+export const updateSaving = async (id: string, data: object): Promise<Saving> => {
   const res = await api.put(`/savings/${id}`, data);
   return res.data;
 };

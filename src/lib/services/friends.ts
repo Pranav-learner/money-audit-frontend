@@ -18,6 +18,14 @@ export interface FriendRequest {
   status: string;
 }
 
+export interface UserSearchResult {
+  userId: string;
+  name: string;
+  phone: string;
+  email: string;
+  relationshipStatus: string;
+}
+
 export const getFriends = async (): Promise<Friend[]> => {
   const res = await api.get('/friends');
   return res.data;
@@ -40,7 +48,7 @@ export const sendFriendRequest = async (phoneOrEmail: string): Promise<void> => 
   await api.post('/friends/requests', { phoneUrlEmail: phoneOrEmail });
 };
 
-export const searchUsers = async (query: string): Promise<any[]> => {
+export const searchUsers = async (query: string): Promise<UserSearchResult[]> => {
   const res = await api.get(`/users/search?query=${query}`);
   return res.data;
 };

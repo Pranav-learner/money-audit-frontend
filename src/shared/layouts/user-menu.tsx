@@ -3,7 +3,8 @@
 import { LogOut, Settings, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
+import { useProfile } from '@/features/profile/use-profile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,15 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu';
-
-function initials(name?: string): string {
-  if (!name) return 'U';
-  return name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
-}
+import { initialsOf } from '@/shared/utils/initials';
 
 /** Avatar trigger with a profile/settings/sign-out menu. */
 export function UserMenu() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const { name, email, avatarDataUrl } = useProfile();
 
   return (
     <DropdownMenu>
@@ -29,14 +27,15 @@ export function UserMenu() {
         className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <Avatar>
-          <AvatarFallback>{initials(user?.name)}</AvatarFallback>
+          {avatarDataUrl && <AvatarImage src={avatarDataUrl} alt="" />}
+          <AvatarFallback>{initialsOf(name)}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">{user?.name ?? 'Guest'}</span>
-            <span className="truncate text-xs text-muted-foreground">{user?.email ?? ''}</span>
+            <span className="text-sm font-medium text-foreground">{name || 'Guest'}</span>
+            <span className="truncate text-xs text-muted-foreground">{email}</span>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

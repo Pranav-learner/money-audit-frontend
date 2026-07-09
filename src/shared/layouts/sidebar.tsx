@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useProfile } from '@/features/profile/use-profile';
 import { usePreferences } from '@/shared/providers/preferences-provider';
-import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { Button } from '@/shared/components/ui/button';
 import { Sheet, SheetContent } from '@/shared/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
@@ -66,18 +67,20 @@ function SidebarNav({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?
 }
 
 function SidebarFooter({ collapsed }: { collapsed: boolean }) {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const { name, email, avatarDataUrl } = useProfile();
 
   return (
     <div className="border-t border-sidebar-border p-3">
       <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
         <Avatar className="size-8">
-          <AvatarFallback>{initials(user?.name)}</AvatarFallback>
+          {avatarDataUrl && <AvatarImage src={avatarDataUrl} alt="" />}
+          <AvatarFallback>{initials(name)}</AvatarFallback>
         </Avatar>
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{user?.name ?? 'Guest'}</p>
-            <p className="truncate text-xs text-muted-foreground">{user?.email ?? ''}</p>
+            <p className="truncate text-sm font-medium text-foreground">{name || 'Guest'}</p>
+            <p className="truncate text-xs text-muted-foreground">{email}</p>
           </div>
         )}
         {!collapsed && (

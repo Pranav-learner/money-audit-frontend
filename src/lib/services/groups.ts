@@ -24,11 +24,28 @@ export interface GroupExpense {
   }[];
 }
 
+export interface GroupInvitation {
+  id: string;
+  groupId?: string;
+  groupName: string;
+  invitedBy: string;
+  date: string;
+}
+
+export interface GroupExpensePayload {
+  title: string;
+  amount: number;
+  splitType?: 'EQUAL' | 'UNEQUAL' | 'PERCENTAGE';
+  paidById: string;
+  splits: { userId: string; amountOwed: number }[];
+  receiptUrl?: string;
+}
+
 export const getGroups = async (): Promise<Group[]> => {
   const res = await api.get('/groups');
-  return res.data.map((g: any) => ({
+  return (res.data as Group[]).map((g) => ({
     ...g,
-    members: g.members || []
+    members: g.members || [],
   }));
 };
 
@@ -53,7 +70,7 @@ export const getGroupExpenses = async (id: string): Promise<GroupExpense[]> => {
   return res.data;
 };
 
-export const getGroupBalances = async (id: string): Promise<any[]> => {
+export const getGroupBalances = async (id: string): Promise<unknown[]> => {
   const res = await api.get(`/api/groups/${id}/balances`);
   return res.data;
 };
@@ -66,7 +83,7 @@ export const inviteGroupMember = async (groupId: string, userId?: string, identi
   await addGroupMember(groupId, userId, identifier);
 };
 
-export const getGroupInvitations = async (): Promise<any[]> => {
+export const getGroupInvitations = async (): Promise<GroupInvitation[]> => {
   const res = await api.get('/groups/invitations');
   return res.data;
 };
@@ -79,7 +96,7 @@ export const rejectGroupInvitation = async (invitationId: string): Promise<void>
   await api.post(`/groups/invitations/${invitationId}/reject`);
 };
 
-export const createGroupExpense = async (groupId: string, data: any): Promise<void> => {
+export const createGroupExpense = async (groupId: string, data: GroupExpensePayload): Promise<void> => {
   const payload = {
     title: data.title,
     totalAmount: data.amount,
