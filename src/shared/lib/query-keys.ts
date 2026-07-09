@@ -13,4 +13,16 @@ export const queryKeys = {
     charts: () => ['dashboard', 'charts'] as const,
     recent: () => ['dashboard', 'recent'] as const,
   },
+  // ── Social / Splitwise ──────────────────────────────────────────────
+  friends: () => ['friends'] as const,
+  friendRequests: () => ['friends', 'requests'] as const,
+  directAll: () => ['direct', 'all'] as const,
+  directFor: (friendId: string) => ['direct', friendId] as const,
+  netBalance: (friendId: string) => ['direct', friendId, 'balance'] as const,
+  groups: () => ['groups'] as const,
+  group: (id: string) => ['groups', id] as const,
+  groupExpenses: (id: string) => ['groups', id, 'expenses'] as const,
+  groupBalances: (id: string) => ['groups', id, 'balances'] as const,
+  editRequests: () => ['edit-requests'] as const,
 } as const;
+

@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBudgets } from '@/features/budgets/api';
 import { useCategories } from '@/features/categories/api';
 import { useDashboardCharts, useDashboardSummary } from '@/features/dashboard/api';
+import { SplitSummary } from '@/features/dashboard/components/split-summary';
 import { useExpenses } from '@/features/expenses/api';
 import { ExpenseFormDialog } from '@/features/expenses/components/expense-form-dialog';
 import { ReceiptUploadDialog } from '@/features/expenses/components/receipt-upload-dialog';
@@ -227,6 +228,9 @@ export function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      {/* Splitwise / social summary */}
+      <SplitSummary />
 
       <ExpenseFormDialog open={expenseOpen} onOpenChange={setExpenseOpen} categories={categoriesQuery.data ?? []} />
       <ReceiptUploadDialog open={receiptOpen} onOpenChange={setReceiptOpen} categories={categoriesQuery.data ?? []} />
