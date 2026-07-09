@@ -9,7 +9,7 @@ import { UserMenu } from './user-menu';
 
 /** Sticky application top bar: mobile menu, breadcrumbs, search, theme, notifications, account. */
 export function TopBar() {
-  const { setMobileNavOpen, setNotificationsOpen, notificationCount } = useUiState();
+  const { setMobileNavOpen, setNotificationsOpen, setCommandOpen, notificationCount } = useUiState();
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6">
@@ -26,15 +26,26 @@ export function TopBar() {
       <Breadcrumbs />
 
       <div className="ml-auto flex items-center gap-1.5">
-        <div className="relative hidden md:block">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-          <input
-            type="search"
-            placeholder="Search…"
-            aria-label="Search"
-            className="h-9 w-56 rounded-md border border-input bg-card pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        </div>
+        <button
+          type="button"
+          onClick={() => setCommandOpen(true)}
+          aria-label="Search (Ctrl+K)"
+          className="hidden h-9 w-56 items-center gap-2 rounded-md border border-input bg-card px-3 text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:flex"
+        >
+          <Search className="size-4" aria-hidden />
+          <span className="flex-1 text-left">Search…</span>
+          <kbd className="rounded border border-border px-1.5 py-0.5 text-[10px] font-medium">⌘K</kbd>
+        </button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          aria-label="Search"
+          onClick={() => setCommandOpen(true)}
+        >
+          <Search />
+        </Button>
 
         <ThemeToggle />
 

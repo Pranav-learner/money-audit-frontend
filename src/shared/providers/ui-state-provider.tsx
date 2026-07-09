@@ -26,6 +26,10 @@ interface UiState {
   notificationsOpen: boolean;
   setNotificationsOpen: (open: boolean) => void;
 
+  /** Global command palette / search visibility. */
+  commandOpen: boolean;
+  setCommandOpen: (open: boolean) => void;
+
   /** Unread notification badge count (surfaced in the top nav). */
   notificationCount: number;
   setNotificationCount: (count: number) => void;
@@ -46,6 +50,7 @@ export function UiStateProvider({ children }: { children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsedState] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [globalLoading, setGlobalLoading] = useState(false);
 
@@ -79,12 +84,14 @@ export function UiStateProvider({ children }: { children: ReactNode }) {
       setMobileNavOpen,
       notificationsOpen,
       setNotificationsOpen,
+      commandOpen,
+      setCommandOpen,
       notificationCount,
       setNotificationCount,
       globalLoading,
       setGlobalLoading,
     }),
-    [sidebarCollapsed, toggleSidebar, setSidebarCollapsed, mobileNavOpen, notificationsOpen, notificationCount, globalLoading],
+    [sidebarCollapsed, toggleSidebar, setSidebarCollapsed, mobileNavOpen, notificationsOpen, commandOpen, notificationCount, globalLoading],
   );
 
   return <UiStateContext.Provider value={value}>{children}</UiStateContext.Provider>;

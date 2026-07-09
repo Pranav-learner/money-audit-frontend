@@ -1,6 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { CommandPalette } from '@/features/search/command-palette';
+import { OfflineBanner } from '@/shared/components/common/offline-banner';
 import { AppSidebar, MobileSidebar } from './sidebar';
 import { BottomNav } from './bottom-nav';
 import { NotificationDrawer } from './notification-drawer';
@@ -24,7 +26,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <MobileSidebar />
       <NotificationDrawer />
+      <CommandPalette />
       <BottomNav />
+      <OfflineBanner />
     </div>
   );
 }

@@ -343,3 +343,45 @@ body {
   background: color-mix(in oklch, var(--accent) 18%, transparent);
   color: var(--accent);
 }
+
+/*
+ * ── Preference-driven modes ───────────────────────────────────────────────
+ * Applied via <html data-compact data-animations> by the PreferencesProvider.
+ */
+
+/* Compact mode: tighten the app shell's vertical rhythm and control heights. */
+:root[data-compact='true'] {
+  --radius: 0.6rem;
+}
+[data-compact='true'] .stat-card,
+[data-compact='true'] main {
+  --compact: 1;
+}
+[data-compact='true'] main#main-content {
+  padding-top: 1rem;
+}
+[data-compact='true'] .card-compact {
+  padding: 0.75rem 1rem;
+}
+
+/* Animations off: neutralise transitions/animations (framer-motion handled via MotionConfig). */
+[data-animations='off'] *,
+[data-animations='off'] *::before,
+[data-animations='off'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Respect the OS reduced-motion setting regardless of the toggle. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

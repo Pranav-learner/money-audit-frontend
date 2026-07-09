@@ -3,7 +3,9 @@
 import { LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { usePreferences } from '@/shared/providers/preferences-provider';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
 import { Button } from '@/shared/components/ui/button';
 import { Sheet, SheetContent } from '@/shared/components/ui/sheet';
@@ -90,7 +92,16 @@ function SidebarFooter({ collapsed }: { collapsed: boolean }) {
 
 /** Fixed, collapsible desktop sidebar. */
 export function AppSidebar() {
-  const { sidebarCollapsed, toggleSidebar } = useUiState();
+  const { sidebarCollapsed, toggleSidebar, setSidebarCollapsed } = useUiState();
+  const { preferences, hydrated } = usePreferences();
+
+  // Apply the "sidebar behaviour" preference. `remember` keeps whatever the
+  // user last toggled; `expanded`/`collapsed` force a state on load.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (preferences.sidebarBehavior === 'expanded') setSidebarCollapsed(false);
+    else if (preferences.sidebarBehavior === 'collapsed') setSidebarCollapsed(true);
+  }, [hydrated, preferences.sidebarBehavior, setSidebarCollapsed]);
 
   return (
     <aside

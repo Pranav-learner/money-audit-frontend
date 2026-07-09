@@ -1,17 +1,5 @@
-import { UserCircle } from 'lucide-react';
-import { PagePlaceholder } from '@/shared/components/common/page-placeholder';
+import { ProfilePage } from '@/features/profile/profile-page';
 
-export default function ProfilePage() {
-  return (
-    <PagePlaceholder
-      title="Profile"
-      icon={UserCircle}
-      description="Manage your account details and preferences."
-      highlights={[
-        'Edit your name, email and phone number',
-        'Update your password and security settings',
-        'Control notification and theme preferences',
-      ]}
-    />
-  );
+export default function Page() {
+  return <ProfilePage />;
 }
