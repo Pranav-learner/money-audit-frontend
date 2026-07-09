@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBudgets } from '@/features/budgets/api';
 import { useCategories } from '@/features/categories/api';
 import { useDashboardCharts, useDashboardSummary } from '@/features/dashboard/api';
+import { IntelligenceSummary } from '@/features/dashboard/components/intelligence-summary';
 import { SplitSummary } from '@/features/dashboard/components/split-summary';
 import { useExpenses } from '@/features/expenses/api';
 import { ExpenseFormDialog } from '@/features/expenses/components/expense-form-dialog';
@@ -228,6 +229,9 @@ export function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      {/* Financial Intelligence snapshot */}
+      <IntelligenceSummary />
 
       {/* Splitwise / social summary */}
       <SplitSummary />
