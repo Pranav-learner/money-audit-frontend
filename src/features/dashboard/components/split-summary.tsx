@@ -4,6 +4,7 @@ import { ArrowRight, HandCoins, Scale, Users2, Wallet } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMemo } from 'react';
+import { useBalanceOverview } from '@/features/analytics/api';
 import { useFriends } from '@/features/friends/api';
 import { useGroups } from '@/features/groups/api';
 import { useFriendBalances } from '@/features/settlements/api';
@@ -24,9 +25,15 @@ const CategoryPieChart = dynamic(
 export function SplitSummary() {
   const friendsQuery = useFriends();
   const friends = friendsQuery.data ?? [];
-  const { balances, isLoading, totalOwed, totalLent } = useFriendBalances(friends);
+  const { balances, isLoading } = useFriendBalances(friends);
   const groupsQuery = useGroups();
   const groups = useMemo(() => groupsQuery.data ?? [], [groupsQuery.data]);
+
+  // Headline owed/lent come from the backend analytics endpoint (single, authoritative call);
+  // per-friend balances power the distribution and top-outstanding widgets.
+  const overviewQuery = useBalanceOverview();
+  const totalOwed = overviewQuery.data?.youOwe ?? 0;
+  const totalLent = overviewQuery.data?.youAreOwed ?? 0;
 
   const loading = friendsQuery.isLoading || isLoading;
   const pending = balances.filter((b) => b.net !== 0);
@@ -55,8 +62,8 @@ export function SplitSummary() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="You owe" value={formatCurrency(totalOwed)} icon={Wallet} loading={loading} />
-        <StatCard label="You're owed" value={formatCurrency(totalLent)} icon={HandCoins} loading={loading} />
+        <StatCard label="You owe" value={formatCurrency(totalOwed)} icon={Wallet} loading={overviewQuery.isLoading} />
+        <StatCard label="You're owed" value={formatCurrency(totalLent)} icon={HandCoins} loading={overviewQuery.isLoading} />
         <StatCard label="Active groups" value={String(groups.length)} icon={Users2} loading={groupsQuery.isLoading} />
         <StatCard label="Pending settlements" value={String(pending.length)} icon={Scale} loading={loading} />
       </div>
