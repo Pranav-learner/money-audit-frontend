@@ -47,27 +47,27 @@ export interface BalanceOverview {
 }
 
 export const getTotalSavings = async (): Promise<TotalSavings> => {
-  const res = await api.get('/api/analytics/savings/total');
+  const res = await api.get('/analytics/savings/total');
   return res.data;
 };
 
 export const getMonthlySavings = async (month: number, year: number): Promise<MonthlySavings> => {
-  const res = await api.get('/api/analytics/savings/monthly', { params: { month, year } });
+  const res = await api.get('/analytics/savings/monthly', { params: { month, year } });
   return res.data;
 };
 
 export const getSavingsTrend = async (year: number): Promise<TrendItem[]> => {
-  const res = await api.get('/api/analytics/savings/trend', { params: { year } });
+  const res = await api.get('/analytics/savings/trend', { params: { year } });
   return res.data;
 };
 
 export const getBudgetUsage = async (month: number, year: number): Promise<BudgetUsage[]> => {
-  const res = await api.get('/api/analytics/budget/usage', { params: { month, year } });
+  const res = await api.get('/analytics/budget/usage', { params: { month, year } });
   return res.data;
 };
 
 export const getMonthlySummary = async (month: number, year: number): Promise<FinancialSummary> => {
-  const res = await api.get('/api/analytics/monthly-summary', { params: { month, year } });
+  const res = await api.get('/analytics/monthly-summary', { params: { month, year } });
   return res.data;
 };
 
@@ -76,21 +76,21 @@ export const getCategoryDistribution = async (
   year: number,
   period: 'MONTH' | 'WEEK' = 'MONTH',
 ): Promise<CategoryDatum[]> => {
-  const res = await api.get('/api/analytics/category-distribution', { params: { month, year, period } });
+  const res = await api.get('/analytics/category-distribution', { params: { month, year, period } });
   return res.data;
 };
 
 export const getSpendingTrend = async (year: number): Promise<TrendItem[]> => {
-  const res = await api.get('/api/analytics/spending-trend', { params: { year } });
+  const res = await api.get('/analytics/spending-trend', { params: { year } });
   return res.data;
 };
 
 export const getExpenseTypeBreakdown = async (month: number, year: number): Promise<ExpenseTypeBreakdown> => {
-  const res = await api.get('/api/analytics/expense-type-breakdown', { params: { month, year } });
+  const res = await api.get('/analytics/expense-type-breakdown', { params: { month, year } });
   return res.data;
 };
 
 export const getBalanceOverview = async (): Promise<BalanceOverview> => {
-  const res = await api.get('/api/analytics/balance-overview');
+  const res = await api.get('/analytics/balance-overview');
   return res.data;
 };

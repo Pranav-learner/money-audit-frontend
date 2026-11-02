@@ -66,12 +66,12 @@ export const getGroupById = async (id: string): Promise<Group> => {
 };
 
 export const getGroupExpenses = async (id: string): Promise<GroupExpense[]> => {
-  const res = await api.get(`/api/groups/${id}/expenses`);
+  const res = await api.get(`/groups/${id}/expenses`);
   return res.data;
 };
 
 export const getGroupBalances = async (id: string): Promise<unknown[]> => {
-  const res = await api.get(`/api/groups/${id}/balances`);
+  const res = await api.get(`/groups/${id}/balances`);
   return res.data;
 };
 
@@ -106,7 +106,7 @@ export const createGroupExpense = async (groupId: string, data: GroupExpensePayl
     splits: data.splits,
     receiptUrl: data.receiptUrl
   };
-  await api.post(`/api/groups/${groupId}/expenses`, payload);
+  await api.post(`/groups/${groupId}/expenses`, payload);
 };
 
 export const deleteGroup = async (id: string): Promise<void> => {

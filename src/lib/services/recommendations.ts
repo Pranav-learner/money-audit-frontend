@@ -30,29 +30,29 @@ export interface RecommendationSummary {
 }
 
 export const getRecommendations = async (): Promise<Recommendation[]> => {
-  const res = await api.get('/api/recommendations');
+  const res = await api.get('/recommendations');
   return res.data;
 };
 
 export const getTopRecommendations = async (): Promise<Recommendation[]> => {
-  const res = await api.get('/api/recommendations/top');
+  const res = await api.get('/recommendations/top');
   return res.data;
 };
 
 export const getRecommendationHistory = async (): Promise<Recommendation[]> => {
-  const res = await api.get('/api/recommendations/history');
+  const res = await api.get('/recommendations/history');
   return res.data;
 };
 
 export const dismissRecommendation = async (id: string): Promise<void> => {
-  await api.put(`/api/recommendations/${id}/dismiss`);
+  await api.put(`/recommendations/${id}/dismiss`);
 };
 
 export const completeRecommendation = async (id: string): Promise<void> => {
-  await api.put(`/api/recommendations/${id}/complete`);
+  await api.put(`/recommendations/${id}/complete`);
 };
 
 export const getRecommendationSummary = async (): Promise<RecommendationSummary> => {
-  const res = await api.get('/api/recommendations/summary');
+  const res = await api.get('/recommendations/summary');
   return res.data;
 };

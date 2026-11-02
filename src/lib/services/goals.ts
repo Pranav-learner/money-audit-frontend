@@ -63,30 +63,30 @@ export interface GoalForecast {
 }
 
 export const getGoals = async (): Promise<Goal[]> => {
-  const res = await api.get('/api/goals');
+  const res = await api.get('/goals');
   return res.data;
 };
 
 export const createGoal = async (data: GoalRequest): Promise<Goal> => {
-  const res = await api.post('/api/goals', data);
+  const res = await api.post('/goals', data);
   return res.data;
 };
 
 export const updateGoal = async (id: string, data: GoalRequest): Promise<Goal> => {
-  const res = await api.put(`/api/goals/${id}`, data);
+  const res = await api.put(`/goals/${id}`, data);
   return res.data;
 };
 
 export const deleteGoal = async (id: string): Promise<void> => {
-  await api.delete(`/api/goals/${id}`);
+  await api.delete(`/goals/${id}`);
 };
 
 export const getGoalPlan = async (id: string): Promise<GoalPlan> => {
-  const res = await api.get(`/api/goals/${id}/plan`);
+  const res = await api.get(`/goals/${id}/plan`);
   return res.data;
 };
 
 export const getGoalForecast = async (id: string): Promise<GoalForecast> => {
-  const res = await api.get(`/api/goals/${id}/forecast`);
+  const res = await api.get(`/goals/${id}/forecast`);
   return res.data;
 };

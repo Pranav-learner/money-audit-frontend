@@ -26,11 +26,11 @@ export interface HealthPoint {
 }
 
 export const getHealthScore = async (): Promise<HealthScore> => {
-  const res = await api.get('/api/health-score');
+  const res = await api.get('/health-score');
   return res.data;
 };
 
 export const getHealthHistory = async (limit = 30): Promise<HealthPoint[]> => {
-  const res = await api.get('/api/health-score/history', { params: { limit } });
+  const res = await api.get('/health-score/history', { params: { limit } });
   return res.data;
 };

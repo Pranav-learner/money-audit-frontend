@@ -39,8 +39,11 @@ function toApiError(error: AxiosError): ApiError {
  * Configured with the base URL, a request timeout, a JWT interceptor and a
  * global 401 handler that clears the session and returns the user to login.
  */
+const rawBase = (env.apiUrl || 'http://localhost:8080').replace(/\/+$/, '');
+const baseURL = rawBase.endsWith('/api') ? rawBase : `${rawBase}/api`;
+
 const api: AxiosInstance = axios.create({
-  baseURL: env.apiUrl,
+  baseURL,
   timeout: env.apiTimeoutMs,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -48,6 +51,9 @@ const api: AxiosInstance = axios.create({
 // Request interceptor — attach the JWT when present.
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    if (config.url?.startsWith('/api/')) {
+      config.url = config.url.substring(4);
+    }
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem(AUTH_STORAGE_KEYS.token);
       if (token) {

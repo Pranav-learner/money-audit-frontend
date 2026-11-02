@@ -27,24 +27,24 @@ export interface InsightSummary {
 }
 
 export const getInsights = async (): Promise<FinancialInsight[]> => {
-  const res = await api.get('/api/financial-insights');
+  const res = await api.get('/financial-insights');
   return res.data;
 };
 
 export const getUnreadInsights = async (): Promise<FinancialInsight[]> => {
-  const res = await api.get('/api/financial-insights/unread');
+  const res = await api.get('/financial-insights/unread');
   return res.data;
 };
 
 export const markInsightRead = async (id: string): Promise<void> => {
-  await api.put(`/api/financial-insights/${id}/read`);
+  await api.put(`/financial-insights/${id}/read`);
 };
 
 export const dismissInsight = async (id: string): Promise<void> => {
-  await api.put(`/api/financial-insights/${id}/dismiss`);
+  await api.put(`/financial-insights/${id}/dismiss`);
 };
 
 export const getInsightSummary = async (): Promise<InsightSummary> => {
-  const res = await api.get('/api/financial-insights/summary');
+  const res = await api.get('/financial-insights/summary');
   return res.data;
 };

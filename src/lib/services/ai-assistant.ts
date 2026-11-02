@@ -22,15 +22,15 @@ export interface ConversationHistory {
 }
 
 export const sendChat = async (message: string): Promise<ChatResponse> => {
-  const res = await api.post('/api/ai/chat', { message });
+  const res = await api.post('/ai/chat', { message });
   return res.data;
 };
 
 export const getChatHistory = async (): Promise<ConversationHistory> => {
-  const res = await api.get('/api/ai/history');
+  const res = await api.get('/ai/history');
   return res.data;
 };
 
 export const clearChatHistory = async (): Promise<void> => {
-  await api.delete('/api/ai/history');
+  await api.delete('/ai/history');
 };

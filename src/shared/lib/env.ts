@@ -4,7 +4,7 @@
  */
 export const env = {
   /** Base URL of the Money Audit backend API. */
-  apiUrl: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080',
+  apiUrl: process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080/api',
   /** Default request timeout (ms) for the API client. */
   apiTimeoutMs: Number(process.env.NEXT_PUBLIC_API_TIMEOUT_MS ?? 20000),
   /** App display name. */

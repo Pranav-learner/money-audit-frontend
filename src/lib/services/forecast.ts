@@ -30,11 +30,11 @@ export interface ForecastSummary {
 }
 
 export const getForecasts = async (): Promise<Forecast[]> => {
-  const res = await api.get('/api/forecast');
+  const res = await api.get('/forecast');
   return res.data;
 };
 
 export const getForecastSummary = async (): Promise<ForecastSummary> => {
-  const res = await api.get('/api/forecast/summary');
+  const res = await api.get('/forecast/summary');
   return res.data;
 };
